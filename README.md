@@ -2,7 +2,7 @@ Demeter
 ===
 About
 ---
-[Demeter] is a DSL package delivery server for OpenWRT platform, and it was constructed in the form of [Openfire](https://github.com/igniterealtime/Openfire) plugins.
+[Demeter](#Demeter) is a DSL package delivery server for OpenWRT platform, and it was constructed in the form of [Openfire](https://github.com/igniterealtime/Openfire) plugins.
 
 Features
 ---
