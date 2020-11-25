@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin>
+    <class>com.sercomm.openfire.plugin.DemeterServiceAPIPlugin</class>
+    <name>${project.name}</name>
+    <description>${project.description}</description>
+    <author>Sercomm</author>
+    <version>${project.version}</version>
+    <date>06/01/2020</date>
+    <minServerVersion>4.6.0</minServerVersion>
+    <minJavaVersion>1.8</minJavaVersion>
+    <parentPlugin>demeter_core</parentPlugin>
+</plugin>
