@@ -21,6 +21,7 @@ import org.jivesoftware.util.cache.CacheFactory;
 
 import com.sercomm.common.util.Algorithm;
 import com.sercomm.common.util.ManagerBase;
+import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.cache.EndUserCache;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
@@ -62,6 +63,19 @@ public class EndUserManager extends ManagerBase
         this.caches = CacheFactory.createCache(CACHE_NAME);
         this.caches.setMaxCacheSize(-1);
         this.caches.setMaxLifetime(1 * 60 * 60 * 1000L); // 1 hour
+        
+        try
+        {
+            // create default administrator account if not exists
+            if(false == this.isRegisteredUser("admin"))
+            {
+                this.createUser("admin", "12345678", EndUserRole.ADMIN);
+            }
+        }
+        catch(Throwable t)
+        {
+            Log.write().error(t.getMessage(), t);
+        }
     }
 
     @Override

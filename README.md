@@ -84,20 +84,26 @@ $ cp target/demeter_c2c_api-openfire-plugin-assembly.jar your-openfire-plugins-f
 $ mv your-openfire-plugins-folder/demeter_c2c_api-openfire-plugin-assembly.jar your-openfire-plugins-folder/demeter_c2c_api.jar
 ```
 11. Restart your Openfire
-12. Adjust your NGINX configuration by refering `lcmdemeter/nginx_conf`, then reloading NGINX
-13. Deploy `lcmdemeter/demeter_portal` to root folder of NGINX, e.g.:
-```console
-$ cd demeter_portal/
-$ cp -R * /usr/share/nginx/html/.
-```
-14. Update properties for Demeter. 
-    13.1 Browse the administration console of Openfire (e.g. http://your-openfire-hostname:9090/) and navigate its `System Properties` page
-    13.2 Modify the following properties to fit your environment.
+12. Update properties for Demeter. 
+    12.1 Browse the administration console of Openfire (e.g. http://your-openfire-hostname:9090/) and navigate its `System Properties` page
+    12.2 Modify the following properties to fit your environment.
     | Property Name                     | Description                                           |
     | --------------------------------- | ----------------------------------------------------- |
     | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices          |
     | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages |
 ![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-properties.png)
+13. Adjust your NGINX configuration by refering all of the configuration files in `lcmdemeter/nginx_conf`, then reloading NGINX
+14. Deploy `lcmdemeter/demeter_portal` to root folder of NGINX, e.g.:
+```console
+$ cd demeter_portal/
+$ cp -R * /usr/share/nginx/html/.
+```
+15.  Finally, browse and login Demeter portal. The default username and password will be:
+```
+Username: admin
+Password: 12345678
+```
+![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-portal.png)
 
 Making Changes
 ---
