@@ -96,7 +96,7 @@ $ cp -R * /usr/share/nginx/html/.
     | --------------------------------- | ----------------------------------------------------- |
     | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices          |
     | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages |
-![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-properties.jpg)
+![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-properties.png)
 
 Making Changes
 ---
