@@ -33,9 +33,10 @@ Project Components
 
 Getting Start - Manual Build
 ---
-1. Host your [Openfire](https://github.com/igniterealtime/Openfire) server (v4.6.0 is recommended) by building Openfire source code from GitHub or installing the package from [Openfire official site](https://www.igniterealtime.org/downloads/)</span>
-**NOTICE 1:** <span style="color:red">Since Demeter only supports MySQL database schema currently, please select `MySQL` as your database durning configuring Openfire
-**NOTICE 2:** <span style="color:red">Demeter has dependency of [Hazelcast Plugin](https://github.com/igniterealtime/openfire-hazelcast-plugin), and it is necessary to install Hazelcast plugin and enable the cluster manually during configuring your Openfire to ensure that Demeter will work properly 
+1. Host your [Openfire](https://github.com/igniterealtime/Openfire) server (v4.6.0 is recommended) by building Openfire source code from GitHub or installing the package from [Openfire official site](https://www.igniterealtime.org/downloads/)</br>
+**NOTICE 1:** <span style="color:red">Since Demeter only supports MySQL database schema currently, please select `MySQL` as your database durning configuring Openfire</span>
+**NOTICE 2:** <span style="color:red">Demeter has dependency of [Hazelcast Plugin](https://github.com/igniterealtime/openfire-hazelcast-plugin), and it is necessary to install Hazelcast plugin and enable the cluster manually during configuring your Openfire to ensure that Demeter will work properly</span>
+</br>
 2. Create folder for Demeter server to store packages and the other necessary resources. The default folder path is `/opt/demeter/`
 ```console
 sudo mkdir /opt/demeter
