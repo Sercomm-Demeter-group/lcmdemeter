@@ -84,9 +84,7 @@ $ cp target/demeter_c2c_api-openfire-plugin-assembly.jar your-openfire-plugins-f
 $ mv your-openfire-plugins-folder/demeter_c2c_api-openfire-plugin-assembly.jar your-openfire-plugins-folder/demeter_c2c_api.jar
 ```
 11. Restart your Openfire
-12. Update properties for Demeter. </br>
-    12.1 Browse the administration console of Openfire (e.g. http://your-openfire-hostname:9090/) and navigate its `System Properties` page
-    12.2 Modify the following properties to fit your environment.</br>
+12. Update properties for Demeter by browsing the administration console of Openfire (e.g. http://your-openfire-hostname:9090/) and navigating its `System Properties` page, then modifying the following properties to fit your environment.
     | Property Name                     | Description                                                                            |
     | --------------------------------- | -------------------------------------------------------------------------------------- |
     | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices                                           |
