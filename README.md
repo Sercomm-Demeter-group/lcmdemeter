@@ -92,6 +92,7 @@ $ mv your-openfire-plugins-folder/demeter_c2c_api-openfire-plugin-assembly.jar y
     | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices                                           |
     | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages                                  |
     | sercomm.c2c.kafka.config          | Endpoint address and topic information for Demeter to produce messages to Apache Kafka |
+    
     **NOTE**:
     Value of "sercomm.c2c.kafka.config" property will be in JSON format. Once this property value has been changed and saved, Demeter server will try to connect to the specific Kafka server automatically and create the topic name if it is necessary. The mentioned JSON arguments are discribed as below, for example:
     ```json
