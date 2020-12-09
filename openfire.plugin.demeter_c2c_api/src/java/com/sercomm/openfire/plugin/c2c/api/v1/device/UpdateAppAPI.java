@@ -1,5 +1,8 @@
 package com.sercomm.openfire.plugin.c2c.api.v1.device;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -10,14 +13,18 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.sercomm.commons.id.NameRule;
+import com.sercomm.commons.kafka.KafkaProducerClient;
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
 import com.sercomm.commons.util.Json;
 import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.demeter.microservices.client.v1.UpdateAppRequest;
+import com.sercomm.openfire.plugin.C2CNotifyManager;
 import com.sercomm.openfire.plugin.DeviceManager;
 import com.sercomm.openfire.plugin.HttpServer;
+import com.sercomm.openfire.plugin.PropertyManager;
+import com.sercomm.openfire.plugin.C2CNotifyManager.Message;
 import com.sercomm.openfire.plugin.c2c.exception.InternalErrorException;
 import com.sercomm.openfire.plugin.c2c.exception.UMEiException;
 import com.sercomm.openfire.plugin.exception.DemeterException;
@@ -67,6 +74,7 @@ public class UpdateAppAPI
 
             String appId;
             String versionId;
+            String taskId;
             
             UpdateAppRequest.RequestData requestData;
             try
@@ -80,6 +88,7 @@ public class UpdateAppAPI
                 
                 appId = requestData.getAppId();
                 versionId = requestData.getVersionId();
+                taskId = requestData.getTaskId();
             }
             catch(Throwable ignored)
             {
@@ -91,9 +100,24 @@ public class UpdateAppAPI
                     status);
             }
 
+            if(XStringUtil.isBlank(appId) ||
+               XStringUtil.isBlank(versionId) ||
+               XStringUtil.isBlank(taskId))
+            {
+                status = Response.Status.BAD_REQUEST;
+                errorMessage = "MANDATORY ARGUMENT CANNOT BE BLANK";
+                
+                throw new UMEiException(
+                    errorMessage,
+                    status);
+            }
+
             UpdateMonitor monitor = new UpdateMonitor();
             try
             {
+                // assign task ID
+                monitor.taskId = taskId;
+
                 DeviceManager.getInstance().updateApp(
                     serial, 
                     mac, 
@@ -178,6 +202,8 @@ public class UpdateAppAPI
     
     private static class UpdateMonitor implements UpdateAppTask.Listener
     {
+        public String taskId = XStringUtil.BLANK;
+
         public boolean completed = false;
         public boolean timeout = false;
 
@@ -185,32 +211,255 @@ public class UpdateAppAPI
         public String failedMessage = null;
         
         @Override
-        public void onDelivered(String serial, String mac, String appId, String versionId, long triggerTime)
+        public void onDelivered(
+                String serial, 
+                String mac, 
+                String appId, 
+                String versionId, 
+                long triggerTime)
         {
+            if(false == PropertyManager.getInstance().getKafkaConfig().getEnable())
+            {
+                return;
+            }
+
+            // produce 'install' message with 'delivered' progress
+            Message message = null;
+            try
+            {
+                HashMap<String, Object> task = new HashMap<>();
+                task.put("taskId", this.taskId);
+                task.put("progress", "delivered");
+                
+                HashMap<String, Object> data = new HashMap<>();
+                data.put("serial", serial);
+                data.put("mac", mac);
+                data.put("task", task);
+
+                message = new Message();
+                message.setAction("install");
+                message.setData(data);                        
+            }
+            catch(Throwable t)
+            {
+                Log.write().error(t.getMessage(), t);
+            }
+            
+            if(null != message)
+            {
+                KafkaProducerClient producer = C2CNotifyManager.getInstance().getProducer();
+                if(null != producer)
+                {
+                    producer.deliver(
+                        PropertyManager.getInstance().getKafkaConfig().getTopicName(),
+                        null, 
+                        Json.build(message).getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
 
         @Override
-        public void onInstalling(String serial, String mac, String appId, String versionId, long triggerTime)
+        public void onInstalling(
+                String serial, 
+                String mac, 
+                String appId, 
+                String versionId, 
+                long triggerTime)
         {
+            if(false == PropertyManager.getInstance().getKafkaConfig().getEnable())
+            {
+                return;
+            }
+
+            // produce 'install' message with 'installing' progress
+            Message message = null;
+            try
+            {
+                HashMap<String, Object> task = new HashMap<>();
+                task.put("taskId", this.taskId);
+                task.put("progress", "installing");
+                
+                HashMap<String, Object> data = new HashMap<>();
+                data.put("serial", serial);
+                data.put("mac", mac);
+                data.put("task", task);
+
+                message = new Message();
+                message.setAction("install");
+                message.setData(data);                        
+            }
+            catch(Throwable t)
+            {
+                Log.write().error(t.getMessage(), t);
+            }
+            
+            if(null != message)
+            {
+                KafkaProducerClient producer = C2CNotifyManager.getInstance().getProducer();
+                if(null != producer)
+                {
+                    producer.deliver(
+                        PropertyManager.getInstance().getKafkaConfig().getTopicName(),
+                        null, 
+                        Json.build(message).getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
 
         @Override
-        public void onCompleted(String serial, String mac, String appId, String versionId, long triggerTime)
+        public void onCompleted(
+                String serial, 
+                String mac, 
+                String appId, 
+                String versionId, 
+                long triggerTime)
         {
+            // update internal flag
             this.completed = true;
+
+            if(false == PropertyManager.getInstance().getKafkaConfig().getEnable())
+            {
+                return;
+            }
+
+            // produce 'install' message with 'completed' progress
+            Message message = null;
+            try
+            {
+                HashMap<String, Object> task = new HashMap<>();
+                task.put("taskId", this.taskId);
+                task.put("progress", "completed");
+                
+                HashMap<String, Object> data = new HashMap<>();
+                data.put("serial", serial);
+                data.put("mac", mac);
+                data.put("task", task);
+
+                message = new Message();
+                message.setAction("install");
+                message.setData(data);                        
+            }
+            catch(Throwable t)
+            {
+                Log.write().error(t.getMessage(), t);
+            }
+            
+            if(null != message)
+            {
+                KafkaProducerClient producer = C2CNotifyManager.getInstance().getProducer();
+                if(null != producer)
+                {
+                    producer.deliver(
+                        PropertyManager.getInstance().getKafkaConfig().getTopicName(),
+                        null, 
+                        Json.build(message).getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
 
         @Override
-        public void onTimeout(String serial, String mac, String appId, String versionId, long triggerTime)
+        public void onTimeout(
+                String serial, 
+                String mac, 
+                String appId, 
+                String versionId, 
+                long triggerTime)
         {
+            // update internal flag
             this.timeout = true;
+
+            if(false == PropertyManager.getInstance().getKafkaConfig().getEnable())
+            {
+                return;
+            }
+
+            // produce 'install' message with 'timeout' progress
+            Message message = null;
+            try
+            {
+                HashMap<String, Object> task = new HashMap<>();
+                task.put("taskId", this.taskId);
+                task.put("progress", "timeout");
+                
+                HashMap<String, Object> data = new HashMap<>();
+                data.put("serial", serial);
+                data.put("mac", mac);
+                data.put("task", task);
+
+                message = new Message();
+                message.setAction("install");
+                message.setData(data);                        
+            }
+            catch(Throwable t)
+            {
+                Log.write().error(t.getMessage(), t);
+            }
+            
+            if(null != message)
+            {
+                KafkaProducerClient producer = C2CNotifyManager.getInstance().getProducer();
+                if(null != producer)
+                {
+                    producer.deliver(
+                        PropertyManager.getInstance().getKafkaConfig().getTopicName(),
+                        null, 
+                        Json.build(message).getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
 
         @Override
-        public void onFail(String serial, String mac, String appId, String versionId, String errorMessage, long triggerTime)
+        public void onFail(
+                String serial, 
+                String mac, 
+                String appId, 
+                String versionId, 
+                String errorMessage, 
+                long triggerTime)
         {
+            // update internal flag
             this.failed = true;
             this.failedMessage = errorMessage;
+
+            if(false == PropertyManager.getInstance().getKafkaConfig().getEnable())
+            {
+                return;
+            }
+
+            // produce 'install' message with 'fail' progress
+            Message message = null;
+            try
+            {
+                HashMap<String, Object> task = new HashMap<>();
+                task.put("taskId", this.taskId);
+                task.put("progress", "fail");
+                
+                HashMap<String, Object> data = new HashMap<>();
+                data.put("serial", serial);
+                data.put("mac", mac);
+                data.put("task", task);
+                data.put("error", errorMessage);
+
+                message = new Message();
+                message.setAction("install");
+                message.setData(data);                        
+            }
+            catch(Throwable t)
+            {
+                Log.write().error(t.getMessage(), t);
+            }
+            
+            if(null != message)
+            {
+                KafkaProducerClient producer = C2CNotifyManager.getInstance().getProducer();
+                if(null != producer)
+                {
+                    producer.deliver(
+                        PropertyManager.getInstance().getKafkaConfig().getTopicName(),
+                        null, 
+                        Json.build(message).getBytes(StandardCharsets.UTF_8));
+                }
+            }
         }
     }
 }
