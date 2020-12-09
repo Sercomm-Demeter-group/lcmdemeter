@@ -87,10 +87,12 @@ $ mv your-openfire-plugins-folder/demeter_c2c_api-openfire-plugin-assembly.jar y
 12. Update properties for Demeter. 
     12.1 Browse the administration console of Openfire (e.g. http://your-openfire-hostname:9090/) and navigate its `System Properties` page
     12.2 Modify the following properties to fit your environment.
-    | Property Name                     | Description                                           |
-    | --------------------------------- | ----------------------------------------------------- |
-    | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices          |
-    | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages |
+    | Property Name                     | Description                                                                            |
+    | --------------------------------- | -------------------------------------------------------------------------------------- |
+    | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices                                           |
+    | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages                                  |
+    | sercomm.c2c.kafka.config          | Endpoint address and topic information for Demeter to produce messages to Apache Kafka |
+
 ![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-properties.png)
 13. Adjust your NGINX configuration by refering all of the configuration files in `lcmdemeter/nginx_conf`, then reloading NGINX
 14. Deploy `lcmdemeter/demeter_portal` to root folder of NGINX, e.g.:

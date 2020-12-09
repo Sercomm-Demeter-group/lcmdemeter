@@ -18,6 +18,9 @@ public class DemeterC2CAPIPlugin implements Plugin
 	{
         try
         {
+            PropertyManager.getInstance().initialize();
+            C2CNotifyManager.getInstance().initialize();
+
             this.httpServer.start();
         }
         catch(Throwable t)
@@ -34,6 +37,9 @@ public class DemeterC2CAPIPlugin implements Plugin
         try
         {
             this.httpServer.stop();
+
+            C2CNotifyManager.getInstance().uninitialize();
+            PropertyManager.getInstance().uninitialize();
         }
         catch(Throwable t)
         {
