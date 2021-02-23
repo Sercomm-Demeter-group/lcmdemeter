@@ -91,7 +91,7 @@
         <dependency>
             <groupId>com.sercomm.demeter</groupId>
             <artifactId>demeter-commons-util</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
         </dependency>
     </dependencies>
 </project>
