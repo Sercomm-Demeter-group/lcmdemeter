@@ -7,7 +7,7 @@
     <author>Sercomm</author>
     <version>${project.version}</version>
     <date>06/01/2020</date>
-    <minServerVersion>4.6.0</minServerVersion>
+    <minServerVersion>4.5.4</minServerVersion>
     <minJavaVersion>1.8</minJavaVersion>
     <parentPlugin>demeter_core</parentPlugin>
 </plugin>
