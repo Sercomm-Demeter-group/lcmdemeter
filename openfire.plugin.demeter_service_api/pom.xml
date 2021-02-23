@@ -4,7 +4,7 @@
     <parent>
         <artifactId>plugins</artifactId>
         <groupId>org.igniterealtime.openfire</groupId>
-        <version>4.6.0</version>
+        <version>4.5.4</version>
     </parent>
     <groupId>com.sercomm.openfire.plugins</groupId>
     <artifactId>demeter_service_api</artifactId>
