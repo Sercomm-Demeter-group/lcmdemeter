@@ -190,26 +190,4 @@ public class SystemProperties implements PropertyEventListener
             return this.credential;
         }        
     }
-
-    public static class UMEiNotifyURL
-    {
-        private String enroll;
-        private String delete;
-        private String progress;
-        
-        public String getEnroll()
-        {
-            return this.enroll;
-        }
-        
-        public String getDelete()
-        {
-            return this.delete;
-        }
-        
-        public String getProgress()
-        {
-            return this.progress;
-        }
-    }
 }
