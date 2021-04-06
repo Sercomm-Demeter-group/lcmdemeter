@@ -144,22 +144,12 @@ public class EndUserManager extends ManagerBase
             stmt = conn.prepareStatement(SQL_QUERY_END_USERS);
             rs = stmt.executeQuery();
 
-            do
+            while(rs.next())
             {
-                if(false == rs.first())
-                {
-                    break;
-                }
-
-                do
-                {
-                    String id = rs.getString("id");
-                    EndUserCache cache = this.getUser(id);
-                    users.add(cache);
-                }
-                while(rs.next());
+                String id = rs.getString("id");
+                EndUserCache cache = this.getUser(id);
+                users.add(cache);
             }
-            while(false);            
         }
         finally
         {

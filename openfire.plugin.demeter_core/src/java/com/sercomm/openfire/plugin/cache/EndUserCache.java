@@ -168,9 +168,9 @@ public class EndUserCache implements CacheBase
                     stmt.setString(++idx, this.id);
                     
                     rs = stmt.executeQuery();
-                    if(false == rs.first())
+                    if(!rs.next())
                     {
-                        throw new SQLException("USER CANNOT BE FOUND: " + this.id);
+                        throw new SQLException("USER CANNOT BE FOUND: " + this.id);                        
                     }
                     
                     this.endUserRole = EndUserRole.fromString(rs.getString("role"));

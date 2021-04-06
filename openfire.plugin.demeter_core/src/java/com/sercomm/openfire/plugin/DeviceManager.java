@@ -703,20 +703,10 @@ public class DeviceManager extends ManagerBase
             stmt = conn.prepareStatement(SQL_QUERY_DISTINCT_MODEL_NAMES);
             
             rs = stmt.executeQuery();
-            do
+            while(rs.next())
             {
-                if(false == rs.first())
-                {
-                    break;
-                }
-                
-                do
-                {
-                    modelNames.add(rs.getString("propValue"));
-                }
-                while(rs.next());
+                modelNames.add(rs.getString("propValue"));
             }
-            while(false);
         }
         finally
         {

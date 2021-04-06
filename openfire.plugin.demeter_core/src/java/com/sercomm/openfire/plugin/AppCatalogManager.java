@@ -111,7 +111,7 @@ public class AppCatalogManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -147,7 +147,7 @@ public class AppCatalogManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -178,21 +178,11 @@ public class AppCatalogManager extends ManagerBase
             stmt = conn.prepareStatement(SQL_QUERY_APP_CATALOGS);
             
             rs = stmt.executeQuery();
-            do
+            while(rs.next())
             {
-                if(false == rs.first())
-                {
-                    break;
-                }
-                
-                do
-                {
-                    AppCatalog object = AppCatalog.from(rs);
-                    catalogs.add(object);
-                }
-                while(rs.next());
+                AppCatalog object = AppCatalog.from(rs);
+                catalogs.add(object);
             }
-            while(false);
         }
         finally
         {

@@ -338,21 +338,11 @@ public class AppManager extends ManagerBase
             stmt = conn.prepareStatement(SQL_QUERY_APPS);
             
             rs = stmt.executeQuery();
-            do
+            while(rs.next())
             {
-                if(false == rs.first())
-                {
-                    break;
-                }
-                
-                do
-                {
-                    App object = App.from(rs);
-                    apps.add(object);
-                }
-                while(rs.next());
+                App object = App.from(rs);
+                apps.add(object);
             }
-            while(false);
         }
         finally
         {
@@ -463,7 +453,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -638,9 +628,10 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, catalogName);
             
             rs = stmt.executeQuery();
-            rs.first();
-            
-            count = rs.getLong("count");
+            if(rs.next())
+            {
+                count = rs.getLong("count");
+            }
         }
         finally
         {
@@ -808,7 +799,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -844,7 +835,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -881,7 +872,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -933,21 +924,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, appId);
             
             rs = stmt.executeQuery();
-            do
+            while(rs.next())
             {
-                if(false == rs.first())
-                {
-                    break;
-                }
-                
-                do
-                {
-                    AppVersion object = AppVersion.from(rs);
-                    appVersions.add(object);
-                }
-                while(rs.next());
+                AppVersion object = AppVersion.from(rs);
+                appVersions.add(object);
             }
-            while(false);
         }
         finally
         {
@@ -977,7 +958,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -1014,7 +995,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
@@ -1050,8 +1031,10 @@ public class AppManager extends ManagerBase
             
             rs = stmt.executeQuery();
             
-            rs.first();            
-            count = rs.getLong("count");
+            if(rs.next())
+            {
+                count = rs.getLong("count");
+            }
         }
         finally
         {
@@ -1081,7 +1064,7 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, version);
             
             rs = stmt.executeQuery();
-            if(rs.first())
+            if(rs.next())
             {
                 count = rs.getLong("count");
             }
@@ -1148,7 +1131,7 @@ public class AppManager extends ManagerBase
             rs = stmt.executeQuery();
             do
             {
-                if(false == rs.first())
+                if(!rs.next())
                 {
                     break;
                 }
