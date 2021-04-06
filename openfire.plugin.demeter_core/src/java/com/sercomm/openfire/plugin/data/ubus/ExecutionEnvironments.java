@@ -1,5 +1,6 @@
 package com.sercomm.openfire.plugin.data.ubus;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class ExecutionEnvironments
@@ -17,32 +18,13 @@ public class ExecutionEnvironments
         public String Vendor;
         public String Type;
         public String Status;
-        public List<Resource> Resources;
+        public HashMap<String, Resource> Resources;
     }
     
     public static class Resource
     {
-        public Memory Memory;
-        public Storage Storage;
-        public CPU CPU;
-    }
-    
-    public static class Memory
-    {
         public Integer Total;
         public Integer Free;
         public Double Usage;
-    }
-    
-    public static class Storage
-    {
-        public Integer Total;
-        public Integer Free;
-        public Double Usage;
-    }
-    
-    public static class CPU
-    {
-        public String Usage;
-    }
+    }    
 }
