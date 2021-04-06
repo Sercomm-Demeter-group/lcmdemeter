@@ -131,7 +131,7 @@ public class UpdateAppTask extends TimerTask
             com.sercomm.openfire.plugin.data.ubus.Source source =
                     new com.sercomm.openfire.plugin.data.ubus.Source();
             // must be HTTP
-            source.Protocol = "http";
+            source.Protocol = SystemProperties.getInstance().getStorageScheme();
             source.Address = SystemProperties.getInstance().getHostServiceAPI().getAddress();
             source.Port = SystemProperties.getInstance().getHostServiceAPI().getPort().toString();
             // must be end with its filename

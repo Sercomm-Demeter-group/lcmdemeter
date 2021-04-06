@@ -16,7 +16,8 @@ public class SystemProperties implements PropertyEventListener
     private Host hostServiceAPI;
     private Host hostDeviceEntry;
     private Storage storage;
-    
+    private String storageScheme;
+
     private final static class SystemPropertiesContainer
     {
         private final static SystemProperties instance = new SystemProperties();
@@ -74,6 +75,11 @@ public class SystemProperties implements PropertyEventListener
         return this.storage;
     }
     
+    public String getStorageScheme()
+    {
+        return this.storageScheme;
+    }
+
     private void loadProperties()
     throws Throwable
     {
@@ -83,10 +89,13 @@ public class SystemProperties implements PropertyEventListener
             SystemProperty.SERCOMM_DEMETER_HOST_DEVICE_ENTRY.toString(), Json.build(DEFAULT_HOST_DEVICE_ENTRY));
         String storageString = JiveGlobals.getProperty(
             SystemProperty.SERCOMM_DEMETER_STORAGE.toString(), Json.build(DEFAULT_STORAGE));
+        String storageScheme = JiveGlobals.getProperty(
+            SystemProperty.SERCOMM_DEMETER_STORAGE_SCHEME.toString(), "http");
         
         this.hostServiceAPI = Json.mapper().readValue(hostServiceAPIString, Host.class);
         this.hostDeviceEntry = Json.mapper().readValue(hostDeviceEntryString, Host.class);
         this.storage = Json.mapper().readValue(storageString, Storage.class);
+        this.storageScheme = storageScheme;
     }
 
     private void saveProperties()
@@ -98,6 +107,8 @@ public class SystemProperties implements PropertyEventListener
             SystemProperty.SERCOMM_DEMETER_HOST_DEVICE_ENTRY.toString(), Json.build(this.hostDeviceEntry));
         JiveGlobals.setProperty(
             SystemProperty.SERCOMM_DEMETER_STORAGE.toString(), Json.build(this.storage));
+        JiveGlobals.setProperty(
+            SystemProperty.SERCOMM_DEMETER_STORAGE_SCHEME.toString(), this.storageScheme);
     }
     
     @Override
@@ -144,7 +155,6 @@ public class SystemProperties implements PropertyEventListener
     
     public static class Host
     {
-        
         private String address;
         private Integer port;
         
@@ -164,7 +174,7 @@ public class SystemProperties implements PropertyEventListener
         private StorageType storageType;
         private String rootPath;
         private String credential;
-        
+
         public StorageType getStorageType()
         {
             return this.storageType;
@@ -178,9 +188,9 @@ public class SystemProperties implements PropertyEventListener
         public String getCredential()
         {
             return this.credential;
-        }
+        }        
     }
-    
+
     public static class UMEiNotifyURL
     {
         private String enroll;
