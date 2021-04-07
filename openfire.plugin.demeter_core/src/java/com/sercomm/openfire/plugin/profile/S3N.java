@@ -100,6 +100,9 @@ public class S3N implements IProfile
             {
                 throw new DemeterException("UBUS RETURNED " + response.Header.Name);
             }
+
+            // wait for the container to be initialized
+            Thread.sleep(IProfile.PREFERENCE_COMMAND_INTERVAL);
         }
         
         // install the App into its container
@@ -152,6 +155,8 @@ public class S3N implements IProfile
         {
             throw new DemeterException("UBUS RETURNED " + response.Header.Name);
         }
+
+        Thread.sleep(PREFERENCE_COMMAND_INTERVAL);
 
         dataModel = UbusManager.getInstance().fire(
             serial, 

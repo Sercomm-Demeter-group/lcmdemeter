@@ -182,6 +182,7 @@ public class InstallAppTask extends TimerTask
                     }
                     else
                     {
+                        Thread.sleep(IProfile.PREFERENCE_COMMAND_INTERVAL);
                         continue;
                     }
                 }
@@ -229,7 +230,7 @@ public class InstallAppTask extends TimerTask
             catch(Throwable ignored) {}
 
             // 5 seconds for gateway to initialize the installation process
-            Thread.sleep(5000L);
+            Thread.sleep(IProfile.PREFERENCE_COMMAND_INTERVAL);
 
             // check if the gateway has installed the IPK properly
             boolean isInstalled = false;
@@ -254,7 +255,8 @@ public class InstallAppTask extends TimerTask
                 if(null == appInstallation)
                 {
                     // maybe it is ongoing
-                    // retry
+                    // wait for a while then retrying
+                    Thread.sleep(IProfile.PREFERENCE_COMMAND_INTERVAL);
                     continue;
                 }
                 

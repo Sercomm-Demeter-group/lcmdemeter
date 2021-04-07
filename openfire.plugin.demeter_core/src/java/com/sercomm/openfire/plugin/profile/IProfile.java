@@ -5,6 +5,8 @@ import java.util.Map;
 
 public interface IProfile
 {
+    public final static long PREFERENCE_COMMAND_INTERVAL = 7 * 1000L;
+
     /*
      * Get CPU, memory and storage usages by ubus command
      */
