@@ -13,7 +13,7 @@ Features
 
 Architecture
 ---
-![](https://github.com/sercomm-cloudwu/lcmdemeter/blob/main/resources/demeter-architecture.jpg)
+![](https://github.com/Sercomm-Demeter-group/lcmdemeter/blob/main/resources/demeter-architecture.jpg)
 
 * `MySQL` - Currently Demeter supports MySQL database schema only
 * `Openfire` - With [Demeter](#Demeter) plugins, Openfire handles the RESTful API requests and WebSocket communication with DSL devices
@@ -42,24 +42,24 @@ Getting Start - Manual Build
 sudo mkdir /opt/demeter
 ```
 3. Install [OpenJDK](https://openjdk.java.net/) and [Maven](https://maven.apache.org/) for building the following packages
-4. Build `lcmdemeter/demeter-commons-id` 
+4. Build `lcmdemeter/demeter_commons_id` 
 ```console
-$ cd demeter-commons-id
+$ cd demeter_commons_id
 $ ./mvnw install -Dmvn.test.skip=true
 ```
-5. Build `lcmdemeter/demeter-commons-umei` 
+1. Build `lcmdemeter/demeter_commons_umei` 
 ```console
-$ cd demeter-commons-umei
+$ cd demeter_commons_umei
 $ ./mvnw install -Dmvn.test.skip=true
 ```
-6. Build `lcmdemeter/demeter-commons-util` 
+1. Build `lcmdemeter/demeter_commons_util` 
 ```console
-$ cd demeter-commons-util
+$ cd demeter_commons_util
 $ ./mvnw install -Dmvn.test.skip=true
 ```
-7. Build `lcmdemeter/demeter-c2c-client` 
+1. Build `lcmdemeter/demeter_c2c_client` 
 ```console
-$ cd demeter-c2c-client
+$ cd demeter_c2c_client
 $ ./mvnw install -Dmvn.test.skip=true
 ```
 8. Build `lcmdemeter/openfire.plugin.demeter_core`, copy the produced Java package file to Openfire plugins folder and rename it to **demeter_core.jar**
@@ -89,6 +89,7 @@ $ mv your-openfire-plugins-folder/demeter_c2c_api-openfire-plugin-assembly.jar y
     | --------------------------------- | -------------------------------------------------------------------------------------- |
     | sercomm.demeter.host.device.entry | Endpoint address information for DSL devices                                           |
     | sercomm.demeter.host.service.api  | Endpoint address information for Demeter portal pages                                  |
+    | sercomm.demeter.storage.scheme  | Endpoint protocol scheme for accessing Demeter package storage.<br />It can be the following values:<br />- **http**<br />- **https**                                  |
     | sercomm.c2c.kafka.config          | Endpoint address and topic information for Demeter to produce messages to Apache Kafka |
     
     **NOTE**:
