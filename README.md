@@ -22,10 +22,10 @@ Architecture
 Project Components
 ---
 * `lcmdemeter/demeter_portal` - Demeter Portal web pages
-* `lcmdemeter/demeter-commons-id` - define the ID rule of DSL devices
-* `lcmdemeter/demeter-commons-umei` - define the **U**nified **M**essage **E**xchange **i**nterface standard of Sercomm
-* `lcmdemeter/demeter-commons-util` - some useful and common utilities
-* `lcmdemeter/demeter-c2c-client` - client methods to access RESTful API of Demeter
+* `lcmdemeter/demeter_commons_id` - define the ID rule of DSL devices
+* `lcmdemeter/demeter_commons_umei` - define the **U**nified **M**essage **E**xchange **i**nterface standard of Sercomm
+* `lcmdemeter/demeter_commons_util` - some useful and common utilities
+* `lcmdemeter/demeter_c2c_client` - client methods to access RESTful API of Demeter
 * `lcmdemeter/openfire.plugin.demeter_core` - an Openfire plugin which implements the main [features](#Features) of Demeter server
 * `lcmdemeter/openfire.plugin.demeter_service_api` - an Openfire plugin which implements RESTful API for Demeter Portal
 * `lcmdemeter/openfire.plugin.demeter_c2c_api` - an Openfire plugin which implements RESTful API of Demeter server for cloud to cloud integration
