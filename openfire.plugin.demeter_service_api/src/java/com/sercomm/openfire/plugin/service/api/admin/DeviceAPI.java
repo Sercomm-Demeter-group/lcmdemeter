@@ -31,7 +31,7 @@ import com.sercomm.openfire.plugin.data.frontend.App;
 import com.sercomm.openfire.plugin.data.frontend.AppVersion;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 
@@ -44,7 +44,7 @@ public class DeviceAPI extends ServiceAPIBase
 
     @GET
     @Path("devices")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getDevices()
     {
@@ -103,7 +103,7 @@ public class DeviceAPI extends ServiceAPIBase
 
     @GET
     @Path("devices/{deviceId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getDevice(
             @PathParam("deviceId") String deviceId)
@@ -158,7 +158,7 @@ public class DeviceAPI extends ServiceAPIBase
 
     @PUT
     @Path("devices/{deviceId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response updateDevice(
             @PathParam("deviceId") String deviceId,
@@ -254,7 +254,7 @@ public class DeviceAPI extends ServiceAPIBase
 
     @GET
     @Path("devices/{deviceId}/apps")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getDeviceApps(
             @PathParam("deviceId") String deviceId)
@@ -321,7 +321,7 @@ public class DeviceAPI extends ServiceAPIBase
     
     @DELETE
     @Path("devices/{deviceId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteDevice(
             @PathParam("deviceId") String deviceId)
@@ -336,7 +336,7 @@ public class DeviceAPI extends ServiceAPIBase
 
     @GET
     @Path("devices/{deviceId}/usage")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getDeviceUsage(
             @PathParam("deviceId") String deviceId)

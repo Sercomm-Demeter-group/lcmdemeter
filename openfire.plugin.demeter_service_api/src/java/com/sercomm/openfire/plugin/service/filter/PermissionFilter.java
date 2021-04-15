@@ -11,7 +11,7 @@ import com.sercomm.openfire.plugin.ServiceSessionManager;
 import com.sercomm.openfire.plugin.cache.ServiceSessionCache;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.ServiceAPIException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 
 public interface PermissionFilter extends ContainerRequestFilter
 {
@@ -24,7 +24,7 @@ public interface PermissionFilter extends ContainerRequestFilter
         }
         else
         {
-            RequiresRoles secured = annotatedElement.getAnnotation(RequiresRoles.class);
+            RequireRoles secured = annotatedElement.getAnnotation(RequireRoles.class);
             if(secured == null)
             {
                 return new ArrayList<EndUserRole>();

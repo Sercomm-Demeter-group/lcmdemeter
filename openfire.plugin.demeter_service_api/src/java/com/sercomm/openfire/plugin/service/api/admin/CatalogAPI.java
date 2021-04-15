@@ -24,7 +24,7 @@ import com.sercomm.openfire.plugin.AppManager;
 import com.sercomm.openfire.plugin.data.frontend.AppCatalog;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 
@@ -37,7 +37,7 @@ public class CatalogAPI extends ServiceAPIBase
     
     @GET
     @Path("catalogs")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCatalogs()
     {
@@ -95,7 +95,7 @@ public class CatalogAPI extends ServiceAPIBase
     
     @GET
     @Path("catalogs/{id}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCatalog(
             @PathParam("id") String idString)
@@ -170,7 +170,7 @@ public class CatalogAPI extends ServiceAPIBase
     
     @POST
     @Path("catalogs")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response postCatalog(
             String requestPayload)
@@ -251,7 +251,7 @@ public class CatalogAPI extends ServiceAPIBase
     
     @DELETE
     @Path("catalogs/{id}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteCatalog(
             @PathParam("id") String idString)

@@ -7,7 +7,6 @@ import java.util.List;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -18,7 +17,6 @@ import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.ServiceAPIException;
 
 @Provider
-@PreMatching
 @Priority(Priorities.AUTHORIZATION)
 public class PermissionFilter implements com.sercomm.openfire.plugin.service.filter.PermissionFilter
 {

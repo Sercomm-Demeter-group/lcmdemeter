@@ -16,10 +16,8 @@ import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.define.HttpHeader;
 import com.sercomm.openfire.plugin.exception.ServiceAPIException;
-import javax.ws.rs.container.PreMatching;
 
 @Provider
-@PreMatching
 @Priority(Priorities.AUTHORIZATION)
 public class PermissionFilter implements com.sercomm.openfire.plugin.service.filter.PermissionFilter
 {

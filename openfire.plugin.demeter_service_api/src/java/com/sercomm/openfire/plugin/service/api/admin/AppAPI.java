@@ -27,7 +27,7 @@ import com.sercomm.openfire.plugin.data.frontend.App;
 import com.sercomm.openfire.plugin.data.frontend.AppCatalog;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 
@@ -40,7 +40,7 @@ public class AppAPI extends ServiceAPIBase
     
     @GET
     @Path("apps")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getApps()
     {
@@ -91,7 +91,7 @@ public class AppAPI extends ServiceAPIBase
     
     @GET
     @Path("apps/{appId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getApp(
             @PathParam("appId") String appId)
@@ -146,7 +146,7 @@ public class AppAPI extends ServiceAPIBase
 
     @POST
     @Path("apps")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response addApp(
             String payloadString)
@@ -251,7 +251,7 @@ public class AppAPI extends ServiceAPIBase
 
     @PUT
     @Path("apps/{appId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response setApp(
             @PathParam("appId") String appId,
@@ -360,7 +360,7 @@ public class AppAPI extends ServiceAPIBase
 
     @DELETE
     @Path("apps/{appId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteApp(
             @PathParam("appId") String appId)
@@ -416,7 +416,7 @@ public class AppAPI extends ServiceAPIBase
 
     @POST
     @Path("apps/{appId}/files") // TODO: rename "files" to "icon" from WEB page
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Consumes(MediaType.APPLICATION_JSON) //TODO: WEB page bug
     @Produces({MediaType.APPLICATION_JSON})
     public Response postIcon(
@@ -477,7 +477,7 @@ public class AppAPI extends ServiceAPIBase
 
     @PUT
     @Path("apps/{appId}/files/{iconId}") // TODO: rename "files" to "icon" from WEB page
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Consumes(MediaType.APPLICATION_JSON) //TODO: WEB page bug
     @Produces({MediaType.APPLICATION_JSON})
     public Response putIcon(
@@ -539,7 +539,7 @@ public class AppAPI extends ServiceAPIBase
 
     @POST
     @Path("apps/{appId}/opkg") // TODO: rename "files" to "ipk" from WEB page
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Consumes(MediaType.APPLICATION_JSON) //TODO: WEB page bug
     @Produces({MediaType.APPLICATION_JSON})
     public Response postOPKG(

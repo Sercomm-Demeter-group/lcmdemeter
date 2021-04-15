@@ -24,7 +24,7 @@ import com.sercomm.openfire.plugin.EndUserManager;
 import com.sercomm.openfire.plugin.cache.EndUserCache;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 
@@ -37,7 +37,7 @@ public class CustomerAPI extends ServiceAPIBase
     
     @GET
     @Path("customers")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCustomers()
     {
@@ -88,7 +88,7 @@ public class CustomerAPI extends ServiceAPIBase
     
     @GET
     @Path("customers/{userId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCustomer(
             @PathParam("userId") String userId)
@@ -140,7 +140,7 @@ public class CustomerAPI extends ServiceAPIBase
 
     @PUT
     @Path("customers/{userId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response setCustomer(
             @PathParam("userId") String userId,
@@ -247,7 +247,7 @@ public class CustomerAPI extends ServiceAPIBase
 
     @DELETE
     @Path("customers/{userId}")
-    @RequiresRoles({EndUserRole.ADMIN})
+    @RequireRoles({EndUserRole.ADMIN})
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteCustomer(
             @PathParam("userId") String userId)

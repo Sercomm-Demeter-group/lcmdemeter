@@ -14,7 +14,7 @@ import com.sercomm.openfire.plugin.define.EndUserRole;
 @NameBinding
 @Retention(RUNTIME)
 @Target({ TYPE, METHOD })
-public @interface RequiresRoles
+public @interface RequireRoles
 {
     EndUserRole[] value() default {};
 }
