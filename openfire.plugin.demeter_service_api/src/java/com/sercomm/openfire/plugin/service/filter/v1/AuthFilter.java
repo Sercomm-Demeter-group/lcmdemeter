@@ -30,9 +30,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(XStringUtil.isBlank(uriPath))
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("AUTHENTICATION REQUIRED")
-                    .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -55,9 +53,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(XStringUtil.isBlank(sessionId))
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("AUTHENTICATION REQUIRED")
-                        .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }                
             
@@ -65,9 +61,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(null == session)
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("AUTHENTICATION REQUIRED")
-                    .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
             
@@ -82,9 +76,7 @@ public class AuthFilter implements ContainerRequestFilter
             catch(Throwable ignored)
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.FORBIDDEN)
-                    .entity("ACCOUNT WAS FREEZED")
-                    .build());
+                    Response.status(Response.Status.FORBIDDEN).build());
                 break;
             }
         }

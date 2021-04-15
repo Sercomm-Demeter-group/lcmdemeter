@@ -42,11 +42,14 @@ public interface PermissionFilter extends ContainerRequestFilter
     default void checkPermissions(String sessionId, List<EndUserRole> allowedRoles)
     throws ServiceAPIException
     {
-        ServiceSessionCache cache = ServiceSessionManager.getInstance().getSession(sessionId);
-        EndUserRole endUserRole = cache.getEndUserRole();
-        if(false == allowedRoles.contains(endUserRole))
+        if(!allowedRoles.isEmpty())
         {
-            throw new ServiceAPIException();
+            ServiceSessionCache cache = ServiceSessionManager.getInstance().getSession(sessionId);
+            EndUserRole endUserRole = cache.getEndUserRole();
+            if(false == allowedRoles.contains(endUserRole))
+            {
+                throw new ServiceAPIException();
+            }
         }
     }
 

@@ -3,6 +3,8 @@ package com.sercomm.openfire.plugin.service.filter.v2;
 import java.io.IOException;
 import java.util.Date;
 
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
@@ -23,6 +25,7 @@ import com.sercomm.openfire.plugin.cache.ServiceSessionCache;
 
 @Provider
 @PreMatching
+@Priority(Priorities.AUTHENTICATION)
 public class AuthFilter implements ContainerRequestFilter
 {
     @Override
@@ -37,9 +40,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(XStringUtil.isBlank(uriPath))
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("AUTHENTICATION REQUIRED")
-                    .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -60,9 +61,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(XStringUtil.isBlank(authField))
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("AUTHENTICATION REQUIRED")
-                        .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }                
             
@@ -71,9 +70,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(2 != tokens.length || 0 != "Bearer".compareTo(tokens[0]))
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("AUTHENTICATION REQUIRED")
-                        .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -98,9 +95,7 @@ public class AuthFilter implements ContainerRequestFilter
                 if(1 <= new Date().compareTo(jwt.getExpiresAt()))
                 {
                     requestContext.abortWith(
-                        Response.status(Response.Status.UNAUTHORIZED)
-                            .entity("AUTHENTICATION REQUIRED")
-                            .build());
+                        Response.status(Response.Status.UNAUTHORIZED).build());
                     break;
                 }
             }
@@ -108,9 +103,7 @@ public class AuthFilter implements ContainerRequestFilter
             {
                 // invalid JWT format
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("AUTHENTICATION REQUIRED")
-                        .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -118,9 +111,7 @@ public class AuthFilter implements ContainerRequestFilter
             if(null == session)
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("AUTHENTICATION REQUIRED")
-                    .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -133,9 +124,7 @@ public class AuthFilter implements ContainerRequestFilter
             catch(JWTVerificationException e)
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("AUTHENTICATION REQUIRED")
-                    .build());
+                    Response.status(Response.Status.UNAUTHORIZED).build());
                 break;
             }
 
@@ -155,9 +144,7 @@ public class AuthFilter implements ContainerRequestFilter
             catch(Throwable ignored)
             {
                 requestContext.abortWith(
-                    Response.status(Response.Status.FORBIDDEN)
-                    .entity("ACCOUNT WAS FREEZED")
-                    .build());
+                    Response.status(Response.Status.FORBIDDEN).build());
                 break;
             }
         }

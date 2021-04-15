@@ -298,6 +298,17 @@ public class AuthAPI extends ServiceAPIBase
         try
         {
             ServiceSessionManager.getInstance().removeSession(sessionId);
+            
+            // response
+            BodyPayload bodyPayload = new BodyPayload()
+                    .withMeta(null)
+                    .withData(null);
+
+            response = Response
+                .status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(bodyPayload.toString())
+                .build();
         }
         catch(UMEiException e)
         {

@@ -1,30 +1,25 @@
 package com.sercomm.openfire.plugin.service.filter.v1;
 
 import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
-import com.sercomm.openfire.plugin.ServiceSessionManager;
-import com.sercomm.openfire.plugin.cache.ServiceSessionCache;
+import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.define.HttpHeader;
 import com.sercomm.openfire.plugin.exception.ServiceAPIException;
-import com.sercomm.openfire.plugin.service.annotation.RequiresRoles;
+import javax.ws.rs.container.PreMatching;
 
-@RequiresRoles
 @Provider
+@PreMatching
 @Priority(Priorities.AUTHORIZATION)
 public class PermissionFilter implements com.sercomm.openfire.plugin.service.filter.PermissionFilter
 {
@@ -38,9 +33,17 @@ public class PermissionFilter implements com.sercomm.openfire.plugin.service.fil
     {
         do
         {
+            final String method = requestContext.getMethod();
             final String uriPath = requestContext.getUriInfo().getPath();
             // for 'api/v1/' only
             if(!uriPath.startsWith("api/v1/"))
+            {
+                break;
+            }
+
+            // skip the following URIs
+            if(uriPath.startsWith("api/v1/session") &&
+               0 == method.compareToIgnoreCase(HttpUtil.METHOD_POST))
             {
                 break;
             }
@@ -60,19 +63,24 @@ public class PermissionFilter implements com.sercomm.openfire.plugin.service.fil
             {
                 // Check if the user is allowed to execute the method
                 // The method annotations override the class annotations
-                if(methodRoles.isEmpty()) 
+                if(!methodRoles.isEmpty()) 
                 {
-                    checkPermissions(sessionId, classRoles);
+                    checkPermissions(sessionId, methodRoles);
                 } 
                 else
                 {
-                    checkPermissions(sessionId, methodRoles);
+                    checkPermissions(sessionId, classRoles);
                 }
             } 
             catch(ServiceAPIException e) 
             {
                 requestContext.abortWith(
                     Response.status(Response.Status.FORBIDDEN).build());
+            }
+            catch(Throwable t)
+            {
+                requestContext.abortWith(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
             }
         }
         while(false);
