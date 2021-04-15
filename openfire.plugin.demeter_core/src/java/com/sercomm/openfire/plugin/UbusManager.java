@@ -23,6 +23,8 @@ import org.jivesoftware.util.cache.Cache;
 import org.jivesoftware.util.cache.CacheFactory;
 import org.jivesoftware.util.cache.ClusterTask;
 import org.jivesoftware.util.cache.ExternalizableUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.component.IQResultListener;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.JID;
@@ -30,7 +32,6 @@ import org.xmpp.packet.PacketError;
 
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.id.NameRule;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.cache.DeviceCache;
 import com.sercomm.openfire.plugin.component.DeviceComponent;
@@ -39,6 +40,8 @@ import com.sercomm.openfire.plugin.util.ArgumentUtil;
 
 public class UbusManager extends ManagerBase
 {
+    private static final Logger log = LoggerFactory.getLogger(UbusManager.class);
+
     // default "device" stanza black hole
     private IQHandler iqHandler = new IQHandler(DeviceComponent.ELM_ROOT)
     {
@@ -327,7 +330,7 @@ public class UbusManager extends ManagerBase
         @Override
         public void run()
         {
-            Log.write().info("({},{});", this.to, this.requestJSON);
+            log.info("({},{});", this.to, this.requestJSON);
             
             com.sercomm.openfire.plugin.websocket.v0.packet.Datagram result = null;
             try
@@ -345,7 +348,7 @@ public class UbusManager extends ManagerBase
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
 
             this.setResultJSON(result.toString());
@@ -448,7 +451,7 @@ public class UbusManager extends ManagerBase
         @Override
         public void run()
         {
-            Log.write().info("({},{});", this.to, this.requestJSON);
+            log.info("({},{});", this.to, this.requestJSON);
             
             com.sercomm.openfire.plugin.websocket.v1.packet.Datagram result = null;
             try
@@ -466,7 +469,7 @@ public class UbusManager extends ManagerBase
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
 
             this.setResultJSON(result.toString());

@@ -21,13 +21,14 @@ import org.jivesoftware.openfire.user.UserNotFoundException;
 import org.jivesoftware.util.TaskEngine;
 import org.jivesoftware.util.cache.Cache;
 import org.jivesoftware.util.cache.CacheFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.packet.JID;
 
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.DateTime;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.cache.DeviceCache;
 import com.sercomm.openfire.plugin.data.frontend.App;
@@ -46,6 +47,8 @@ import com.sercomm.openfire.plugin.util.DbConnectionUtil;
 
 public class DeviceManager extends ManagerBase 
 {
+    private static final Logger log = LoggerFactory.getLogger(DeviceManager.class);
+
     private final static String CACHE_NAME = "Demeter Device Caches";
     private Cache<String, DeviceCache> deviceCaches;
 
@@ -88,7 +91,7 @@ public class DeviceManager extends ManagerBase
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }            
         }
 
@@ -145,11 +148,11 @@ public class DeviceManager extends ManagerBase
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
                 errorMessage = t.getMessage();
             }
             
-            Log.write().debug("({},{})={}", serial, mac, errorMessage);
+            log.debug("({},{})={}", serial, mac, errorMessage);
         }
 
         @Override
@@ -195,11 +198,11 @@ public class DeviceManager extends ManagerBase
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
                 errorMessage = t.getMessage();
             }
 
-            Log.write().debug("({},{})={}", serial, mac, errorMessage);
+            log.debug("({},{})={}", serial, mac, errorMessage);
         }
 
         @Override

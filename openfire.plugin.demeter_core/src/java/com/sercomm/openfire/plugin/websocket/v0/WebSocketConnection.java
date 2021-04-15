@@ -12,15 +12,18 @@ import org.jivesoftware.openfire.session.LocalSession;
 import org.jivesoftware.openfire.spi.ConnectionConfiguration;
 import org.jivesoftware.openfire.spi.ConnectionManagerImpl;
 import org.jivesoftware.openfire.spi.ConnectionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Packet;
 
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.websocket.v0.packet.Datagram;
 
 public class WebSocketConnection extends VirtualConnection
 {
+    private static final Logger log = LoggerFactory.getLogger(WebSocketConnection.class);
+
     private InetSocketAddress remotePeer;
     private DeviceWebSocket socket;
     private PacketDeliverer backupDeliverer;
@@ -71,7 +74,7 @@ public class WebSocketConnection extends VirtualConnection
         // to deliver to device
         if(false == (packet instanceof IQ))
         {
-            Log.write().error("ONLY IQ STANZA IS ALLOWED FOR THIS SESSION: " + packet.toXML());
+            log.error("ONLY IQ STANZA IS ALLOWED FOR THIS SESSION: " + packet.toXML());
             return;
         }
         
@@ -85,7 +88,7 @@ public class WebSocketConnection extends VirtualConnection
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage());
+            log.error(t.getMessage());
             return;
         }
         

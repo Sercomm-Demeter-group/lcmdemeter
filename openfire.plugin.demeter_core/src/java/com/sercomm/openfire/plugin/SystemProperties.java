@@ -4,15 +4,18 @@ import java.util.Map;
 
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.PropertyEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.define.StorageType;
 import com.sercomm.openfire.plugin.prop.SystemProperty;
 
 public class SystemProperties implements PropertyEventListener
 {
+    private static final Logger log = LoggerFactory.getLogger(SystemProperties.class);
+
     private Host hostServiceAPI;
     private Host hostDeviceEntry;
     private Storage storage;
@@ -47,7 +50,7 @@ public class SystemProperties implements PropertyEventListener
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
     }
     
@@ -122,7 +125,7 @@ public class SystemProperties implements PropertyEventListener
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
         }
     }
@@ -138,7 +141,7 @@ public class SystemProperties implements PropertyEventListener
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
         }
     }

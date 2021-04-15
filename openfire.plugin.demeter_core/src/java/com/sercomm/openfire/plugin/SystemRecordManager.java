@@ -11,14 +11,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.util.TaskEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.common.util.ManagerBase;
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.data.frontend.SystemRecord;
 import com.sercomm.openfire.plugin.util.DbConnectionUtil;
 
 public class SystemRecordManager extends ManagerBase
 {
+    private static final Logger log = LoggerFactory.getLogger(SystemRecordManager.class);
+
     private final static int _BATCH_COUNT = 100;
     private final Queue<SystemRecord> queue = new ConcurrentLinkedQueue<SystemRecord>();    
     private final TimerTask writeTask;
@@ -133,7 +136,7 @@ public class SystemRecordManager extends ManagerBase
             catch(Throwable t)
             {
                 abort = true;
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
                 
                 // increase the retry count
                 for(SystemRecord record : records)
@@ -154,7 +157,7 @@ public class SystemRecordManager extends ManagerBase
                 DbConnectionManager.closeConnection(conn);
             }
 
-            Log.write().debug("({},{});",
+            log.debug("({},{});",
                 insertCount,
                 queue.size());                
         }

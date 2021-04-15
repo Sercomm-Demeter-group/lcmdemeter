@@ -15,10 +15,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.EndUserManager;
 import com.sercomm.openfire.plugin.OwnershipManager;
@@ -34,7 +36,9 @@ import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 @Path(AuthAPI.URI_PATH)
 public class AuthAPI extends ServiceAPIBase
 {
-    protected final static String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
+    private static final Logger log = LoggerFactory.getLogger(AuthAPI.class);
+
+    protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
     
     @Context 
     private HttpServletRequest request;
@@ -127,6 +131,10 @@ public class AuthAPI extends ServiceAPIBase
                         entity.put("device", serial);
                     }
                     break;
+                default:
+                    errorMessage = "ROLE IS NOT COMPATIBLE WITH API V1, PLEASE CHANGE TO API V2 INSTEAD";
+                    throw new DemeterException(errorMessage);
+
             }
             
             response = Response.status(Status.OK)
@@ -147,14 +155,14 @@ public class AuthAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }
         
-        Log.write().info("({},{},{})={}",
+        log.info("({},{},{})={}",
             customer,
             password,
             device,

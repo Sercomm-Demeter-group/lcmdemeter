@@ -6,15 +6,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public enum EndUserRole
 {
     ADMIN("admin"),
-    MEMBER("member");
+    @Deprecated
+    MEMBER("member"),
+    EDITOR("editor"),
+    OPERATOR("operator");
 
-    private static Map<String, EndUserRole> __map = 
+    private static Map<String, EndUserRole> map = 
             new ConcurrentHashMap<String, EndUserRole>();
     static
     {
         for(EndUserRole endUserRole : EndUserRole.values())
         {
-            __map.put(endUserRole.toString(), endUserRole);
+            map.put(endUserRole.toString(), endUserRole);
         }
     }
 
@@ -29,9 +32,9 @@ public enum EndUserRole
     {
         return this.value;
     }
-    
+
     public static EndUserRole fromString(String value)
     {
-        return __map.get(value);
+        return map.get(value);
     }
 }

@@ -3,10 +3,13 @@ package com.sercomm.openfire.plugin.util;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.sercomm.commons.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DbConnectionUtil
 {
+    private static final Logger log = LoggerFactory.getLogger(DbConnectionUtil.class);
+
     public static Connection openTransaction(Connection connection)
     throws SQLException
     {
@@ -41,7 +44,7 @@ public class DbConnectionUtil
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
     }
 }

@@ -8,10 +8,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.demeter.microservices.client.v1.PostEchoRequest;
 import com.sercomm.demeter.microservices.client.v1.PostEchoResult;
@@ -22,6 +24,8 @@ import com.sercomm.openfire.plugin.c2c.exception.UMEiException;
 @Path("umei/v1")
 public class PostEchoAPI
 {
+    private static final Logger log = LoggerFactory.getLogger(PostEchoAPI.class);
+
     @POST
     @Path("echo")
     @Produces({MediaType.APPLICATION_JSON})
@@ -105,7 +109,7 @@ public class PostEchoAPI
                 originatorId);
         }
         
-        Log.write().info("({},{},{}); {}",
+        log.info("({},{},{}); {}",
             requestId,
             originatorId,
             requestPayload,

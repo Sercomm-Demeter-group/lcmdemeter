@@ -18,16 +18,19 @@ import javax.crypto.spec.SecretKeySpec;
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.util.cache.Cache;
 import org.jivesoftware.util.cache.CacheFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.common.util.Algorithm;
 import com.sercomm.common.util.ManagerBase;
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.cache.EndUserCache;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
 
 public class EndUserManager extends ManagerBase 
 {
+    private static final Logger log = LoggerFactory.getLogger(EndUserManager.class);
+
     private final static String CACHE_NAME = "Demeter End User Caches";
     private Cache<String, EndUserCache> caches;
     
@@ -74,7 +77,7 @@ public class EndUserManager extends ManagerBase
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
     }
 

@@ -9,16 +9,19 @@ import org.dom4j.Element;
 import org.jivesoftware.openfire.SessionManager;
 import org.jivesoftware.openfire.session.ClientSession;
 import org.jivesoftware.openfire.session.LocalSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.component.AbstractComponent;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.JID;
 
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 
 public class DeviceComponent extends AbstractComponent
 {
+    private static final Logger log = LoggerFactory.getLogger(DeviceComponent.class);
+
     public final static String NAME = "device";
     public final static String NAMESPACE = "urn:xmpp:sercomm:demeter:1";
     public final static String DESCRIPTION = "Demeter Device Service";
@@ -146,7 +149,7 @@ public class DeviceComponent extends AbstractComponent
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
 
         if(null != elmGateway)

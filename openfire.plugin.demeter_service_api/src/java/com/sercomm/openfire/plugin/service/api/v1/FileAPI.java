@@ -18,10 +18,11 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.HttpUtil;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.AppManager;
 import com.sercomm.openfire.plugin.DeviceManager;
@@ -40,9 +41,11 @@ import com.sercomm.openfire.plugin.util.StorageUtil;
 @Path(FileAPI.URI_PATH)
 public class FileAPI extends ServiceAPIBase
 {
-    protected final static String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
+    private static final Logger log = LoggerFactory.getLogger(FileAPI.class);
+
+    protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
     
-    private final static int BUFFER_LENGTH = 256;
+    private static final int BUFFER_LENGTH = 256;
     
     @GET
     @Path("files/icon/{iconId}")
@@ -74,7 +77,7 @@ public class FileAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
@@ -161,14 +164,14 @@ public class FileAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }        
         
-        Log.write().info("({},{})={}",
+        log.info("({},{})={}",
             versionId,
             filename,
             errorMessage);
@@ -241,14 +244,14 @@ public class FileAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }        
         
-        Log.write().info("({},{})={}",
+        log.info("({},{})={}",
             deviceId,
             filename,
             errorMessage);
@@ -282,7 +285,7 @@ public class FileAPI extends ServiceAPIBase
             } 
             catch(Throwable t) 
             {  
-                Log.write().error(t.getMessage(), t); 
+                log.error(t.getMessage(), t); 
             }
         }
     }

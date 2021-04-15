@@ -18,13 +18,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.jivesoftware.database.DbConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
 import com.sercomm.commons.umei.Meta;
 import com.sercomm.commons.util.DateTime;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.demeter.microservices.client.v1.GetDevicesResult;
 import com.sercomm.openfire.plugin.DeviceManager;
@@ -38,6 +39,8 @@ import com.sercomm.openfire.plugin.prop.DeviceProperty;
 @Path("umei/v1")
 public class GetDevicesAPI
 {
+    private static final Logger log = LoggerFactory.getLogger(GetDevicesAPI.class);
+
     @GET
     @Path("devices")
     @Produces({MediaType.APPLICATION_JSON})
@@ -258,7 +261,7 @@ public class GetDevicesAPI
         }
         catch(UMEiException e)
         {
-            status = e.getErrorStatus();            
+            status = e.getErrorStatus();
             errorMessage = e.getMessage();
             throw e.withIdentifyValues(
                 requestId,
@@ -274,8 +277,8 @@ public class GetDevicesAPI
                 HttpServer.SERVICE_NAME, 
                 originatorId);
         }
-        
-        Log.write().info("({},{},[{}],[{}],{},{},{}); {}",
+
+        log.info("({},{},[{}],[{}],{},{},{}); {}",
             requestId,
             originatorId,
             models,
@@ -284,7 +287,7 @@ public class GetDevicesAPI
             size,
             sort,
             XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
-        
+
         return response;
     }
 }

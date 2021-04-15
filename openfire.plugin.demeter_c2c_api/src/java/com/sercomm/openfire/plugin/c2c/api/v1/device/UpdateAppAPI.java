@@ -12,12 +12,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.kafka.KafkaProducerClient;
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.demeter.microservices.client.v1.UpdateAppRequest;
 import com.sercomm.openfire.plugin.C2CNotifyManager;
@@ -33,6 +35,8 @@ import com.sercomm.openfire.plugin.task.UpdateAppTask;
 @Path("umei/v1")
 public class UpdateAppAPI
 {
+    private static final Logger log = LoggerFactory.getLogger(UpdateAppAPI.class);
+
     @PUT
     @Path("device/{nodeName}/app")
     @Produces({MediaType.APPLICATION_JSON})
@@ -190,7 +194,7 @@ public class UpdateAppAPI
                 originatorId);
         }
         
-        Log.write().info("({},{},{},{}); {}",
+        log.info("({},{},{},{}); {}",
             requestId,
             originatorId,
             nodeName,
@@ -242,7 +246,7 @@ public class UpdateAppAPI
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             
             if(null != message)
@@ -290,7 +294,7 @@ public class UpdateAppAPI
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             
             if(null != message)
@@ -341,7 +345,7 @@ public class UpdateAppAPI
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             
             if(null != message)
@@ -392,7 +396,7 @@ public class UpdateAppAPI
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             
             if(null != message)
@@ -446,7 +450,7 @@ public class UpdateAppAPI
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             
             if(null != message)

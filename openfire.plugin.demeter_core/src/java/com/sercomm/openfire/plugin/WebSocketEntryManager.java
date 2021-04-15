@@ -8,13 +8,16 @@ import org.jivesoftware.openfire.http.HttpBindManager;
 import org.jivesoftware.openfire.session.ClientSession;
 import org.jivesoftware.openfire.session.LocalSession;
 import org.jivesoftware.util.JiveGlobals;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.common.util.ManagerBase;
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.websocket.v0.DeviceWebSocket;
 
 public class WebSocketEntryManager extends ManagerBase
 {
+    private static final Logger log = LoggerFactory.getLogger(WebSocketEntryManager.class);
+
     private ServletContextHandler contextHandler;
 
     private WebSocketEntryManager()
@@ -49,12 +52,12 @@ public class WebSocketEntryManager extends ManagerBase
             } 
             catch(Throwable t) 
             {
-                Log.write().error("FAILED TO START 'sercomm_websocket' PLUGIN: ", t.getMessage());
+                log.error("FAILED TO START 'sercomm_websocket' PLUGIN: ", t.getMessage());
             }
         } 
         else 
         {
-            Log.write().error("FAILED TO START 'sercomm_websocket' PLUGIN: " + "http-bind is disabled");
+            log.error("FAILED TO START 'sercomm_websocket' PLUGIN: " + "http-bind is disabled");
         }
     }
 

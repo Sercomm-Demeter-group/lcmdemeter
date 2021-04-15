@@ -15,8 +15,9 @@ import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.util.cache.CacheSizes;
 import org.jivesoftware.util.cache.CannotCalculateSizeException;
 import org.jivesoftware.util.cache.ExternalizableUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.EndUserManager;
 import com.sercomm.openfire.plugin.define.EndUserRole;
@@ -27,6 +28,8 @@ import com.sercomm.openfire.plugin.util.ValueUtil;
 
 public class EndUserCache implements CacheBase
 {
+    private static final Logger log = LoggerFactory.getLogger(EndUserCache.class);
+
     private boolean isInitialized = false;
     
     private final static String TABLE_S_END_USER = "sEndUser";
@@ -256,7 +259,7 @@ public class EndUserCache implements CacheBase
                     }
                     catch(Throwable t)
                     {
-                        Log.write().error(t.getMessage(), t);
+                        log.error(t.getMessage(), t);
                         break;
                     }
                     finally
@@ -304,7 +307,7 @@ public class EndUserCache implements CacheBase
                 catch(Throwable t)
                 {
                     abort = true;
-                    Log.write().error(t.getMessage(), t);
+                    log.error(t.getMessage(), t);
                 }
                 finally
                 {
@@ -390,7 +393,7 @@ public class EndUserCache implements CacheBase
         }
         catch (SQLException e) 
         {
-            Log.write().error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         finally 
         {
@@ -431,7 +434,7 @@ public class EndUserCache implements CacheBase
         }
         catch(Throwable t) 
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             abort = true;
         }
         finally 

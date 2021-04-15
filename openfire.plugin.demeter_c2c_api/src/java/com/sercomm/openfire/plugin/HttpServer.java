@@ -10,11 +10,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
-
-import com.sercomm.commons.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpServer
 {
+    private static final Logger log = LoggerFactory.getLogger(HttpServer.class);
+
     public static final String SERVICE_NAME = "demeter.core";
     public static final int DEFAULT_PORT = 8090;
 
@@ -109,7 +111,7 @@ public class HttpServer
             this.server.start();
             this.handlers.start();
 
-            Log.write().info("(); SERVER {} STARTED", SERVICE_NAME);
+            log.info("(); SERVER {} STARTED", SERVICE_NAME);
         }
         catch(Throwable t)
         {
@@ -137,6 +139,6 @@ public class HttpServer
             throw new RuntimeException(t);
         }
 
-        Log.write().info("(); SERVER {} STOPPED", SERVICE_NAME);
+        log.info("(); SERVER {} STOPPED", SERVICE_NAME);
     }
 }

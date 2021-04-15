@@ -4,11 +4,12 @@ import java.io.File;
 
 import org.jivesoftware.openfire.container.Plugin;
 import org.jivesoftware.openfire.container.PluginManager;
-
-import com.sercomm.commons.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DemeterC2CAPIPlugin implements Plugin
 {
+    private static final Logger log = LoggerFactory.getLogger(DemeterC2CAPIPlugin.class);
     private final HttpServer httpServer = new HttpServer();
 
     @Override
@@ -25,7 +26,7 @@ public class DemeterC2CAPIPlugin implements Plugin
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             
             this.httpServer.stop();
         }
@@ -43,7 +44,7 @@ public class DemeterC2CAPIPlugin implements Plugin
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
 	}
 }

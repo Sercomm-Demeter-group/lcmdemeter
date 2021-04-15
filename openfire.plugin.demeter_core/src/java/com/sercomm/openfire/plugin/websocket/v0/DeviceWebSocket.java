@@ -26,18 +26,18 @@ import org.jivesoftware.openfire.auth.AuthToken;
 import org.jivesoftware.openfire.session.ClientSession;
 import org.jivesoftware.openfire.session.ConnectionSettings;
 import org.jivesoftware.openfire.session.LocalClientSession;
-import org.jivesoftware.openfire.streammanagement.StreamManager;
 import org.jivesoftware.openfire.user.UserManager;
 import org.jivesoftware.util.JiveConstants;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.TaskEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Presence;
 
 import com.sercomm.common.util.Algorithm;
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.DeviceManager;
 import com.sercomm.openfire.plugin.EndUserManager;
@@ -58,6 +58,8 @@ import com.sercomm.openfire.plugin.websocket.v0.packet.Type;
 @WebSocket
 public class DeviceWebSocket 
 {
+    private static final Logger log = LoggerFactory.getLogger(DeviceWebSocket.class);
+
     public final static String SESSION_SERCOMM = "sercomm";
     public final static String SESSION_IDENTIFICATION = "sercomm.identification";
     public final static String SESSION_MUTUAL_AUTH = "sercomm.mutual.auth";
@@ -112,7 +114,7 @@ public class DeviceWebSocket
     @OnWebSocketConnect
     public void onConnect(Session session)
     {
-        Log.write().debug("({})", this.id);
+        log.debug("({})", this.id);
         
         this.session = session;
         this.connection = new WebSocketConnection(this, session.getRemoteAddress());
@@ -127,7 +129,7 @@ public class DeviceWebSocket
     @OnWebSocketClose
     public void onClose(int statusCode, String reason)
     {
-        Log.write().debug("({},{},{})={},{}", this.id, this.serial, this.mac, statusCode, reason);
+        log.debug("({},{},{})={},{}", this.id, this.serial, this.mac, statusCode, reason);
         this.close(StatusCode.NORMAL, reason);
     }
 
@@ -186,7 +188,7 @@ public class DeviceWebSocket
         } 
         catch(Throwable t) 
         {
-            Log.write().debug("FAILED TO PROCESS PACKET", t);
+            log.debug("FAILED TO PROCESS PACKET", t);
         } 
     }
 
@@ -208,7 +210,7 @@ public class DeviceWebSocket
         } 
         catch(Throwable t) 
         {
-            Log.write().error("FAILED TO CLOSE WEBSOCKET", t);
+            log.error("FAILED TO CLOSE WEBSOCKET", t);
         }
     }
 
@@ -262,12 +264,12 @@ public class DeviceWebSocket
             } 
             catch(Exception e) 
             {
-                Log.write().error("Packet delivery failed; session: " + this.session, e);
+                log.error("Packet delivery failed; session: " + this.session, e);
             }
         } 
         else 
         {
-            Log.write().warn("Failed to deliver packet; socket is closed:\n" + jsonString);
+            log.warn("Failed to deliver packet; socket is closed:\n" + jsonString);
         }
     }
 
@@ -328,11 +330,11 @@ public class DeviceWebSocket
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
             finally
             {
-                Log.write().debug("({},{},{})={}", id, serial, mac, errorMessage);
+                log.debug("({},{},{})={}", id, serial, mac, errorMessage);
                 if(!XStringUtil.isBlank(errorMessage))
                 {
                     close(StatusCode.NORMAL, errorMessage);
@@ -506,7 +508,7 @@ public class DeviceWebSocket
         }
         finally
         {
-            Log.write().info("({},{},{},{},{})={}",
+            log.info("({},{},{},{},{})={}",
                 deviceWebSocket.id,
                 requestId,
                 credential,
@@ -693,7 +695,7 @@ public class DeviceWebSocket
         }
         finally
         {
-            Log.write().info("({},{},{},{},{},{},{},{})={}",
+            log.info("({},{},{},{},{},{},{},{})={}",
                 deviceWebSocket.id,
                 requestId,
                 credential,
@@ -780,7 +782,7 @@ public class DeviceWebSocket
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
     }    
 }

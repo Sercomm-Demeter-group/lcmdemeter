@@ -9,11 +9,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
 import com.sercomm.commons.util.DateTime;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.demeter.microservices.client.v1.GetDeviceResult;
 import com.sercomm.openfire.plugin.DeviceManager;
@@ -26,6 +28,8 @@ import com.sercomm.openfire.plugin.exception.DemeterException;
 @Path("umei/v1")
 public class GetDeviceAPI
 {
+    private static final Logger log = LoggerFactory.getLogger(GetDeviceAPI.class);
+
     @GET
     @Path("device/{nodeName}")
     @Produces({MediaType.APPLICATION_JSON})
@@ -100,7 +104,7 @@ public class GetDeviceAPI
                 originatorId);
         }
         
-        Log.write().info("({},{},{}); {}",
+        log.info("({},{},{}); {}",
             requestId,
             originatorId,
             nodeName,

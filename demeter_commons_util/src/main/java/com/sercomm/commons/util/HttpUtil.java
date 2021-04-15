@@ -15,8 +15,13 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpUtil
 {
+    private static final Logger log = LoggerFactory.getLogger(HttpUtil.class);
+
     ///////////////////////////////////////////////////////////////////////////////////////
     public final static String SESSION_ID                   = "SERCOMMID";
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -220,7 +225,7 @@ public class HttpUtil
             } 
             catch (NoSuchAlgorithmException | KeyManagementException e) 
             {
-                Log.write().error(e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
 
             HttpsURLConnection.setDefaultSSLSocketFactory(

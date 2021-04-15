@@ -5,15 +5,17 @@ import java.util.Map;
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.PropertyEventDispatcher;
 import org.jivesoftware.util.PropertyEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.prop.C2CPropertyEnum;
 import com.sercomm.openfire.plugin.prop.KafkaConfig;
 
 public class PropertyManager extends ManagerBase implements PropertyEventListener
 {
+    private static final Logger log = LoggerFactory.getLogger(PropertyManager.class);
     private KafkaConfig kafkaConfig;
 
     private static final KafkaConfig DEFAULT_NOTIFY_KAFKA_CONFIG = new KafkaConfig();
@@ -78,7 +80,7 @@ public class PropertyManager extends ManagerBase implements PropertyEventListene
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
         finally
         {
@@ -140,7 +142,7 @@ public class PropertyManager extends ManagerBase implements PropertyEventListene
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
         }
     }
@@ -170,7 +172,7 @@ public class PropertyManager extends ManagerBase implements PropertyEventListene
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
         }
     }

@@ -17,11 +17,12 @@ import javax.ws.rs.core.Response.Status;
 
 import org.jivesoftware.openfire.user.User;
 import org.jivesoftware.openfire.user.UserManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.AppManager;
 import com.sercomm.openfire.plugin.DeviceManager;
@@ -37,7 +38,9 @@ import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 @Path(DeviceAPI.URI_PATH)
 public class DeviceAPI extends ServiceAPIBase
 {
-    protected final static String URI_PATH = ServiceAPIBase.URI_PATH + "admin/";    
+    private static final Logger log = LoggerFactory.getLogger(DeviceAPI.class);
+
+    protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "admin/";    
 
     @GET
     @Path("devices")
@@ -85,14 +88,14 @@ public class DeviceAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }        
         
-        Log.write().info("()={}",
+        log.info("()={}",
             errorMessage);
 
         return response;
@@ -140,14 +143,14 @@ public class DeviceAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }        
         
-        Log.write().info("()={}",
+        log.info("()={}",
             errorMessage);
 
         return response;
@@ -232,14 +235,14 @@ public class DeviceAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }        
         
-        Log.write().info("({},{},{},{})={}",
+        log.info("({},{},{},{})={}",
             deviceId,
             company,
             name,
@@ -302,14 +305,14 @@ public class DeviceAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }                
         
-        Log.write().info("({})={}",
+        log.info("({})={}",
             deviceId,
             errorMessage);
 

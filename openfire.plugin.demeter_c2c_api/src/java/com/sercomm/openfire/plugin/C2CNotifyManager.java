@@ -3,12 +3,14 @@ package com.sercomm.openfire.plugin;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.kafka.KafkaAdminClient;
 import com.sercomm.commons.kafka.KafkaProducerClient;
 import com.sercomm.commons.kafka.KafkaProducerHandler;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.cache.DeviceCache;
 import com.sercomm.openfire.plugin.define.DeviceState;
@@ -17,6 +19,7 @@ import com.sercomm.openfire.plugin.dispatcher.DeviceStateDispatcher.StateListene
 
 public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandler
 {
+    private static final Logger log = LoggerFactory.getLogger(C2CNotifyManager.class);
     private KafkaProducerClient producer;
 
     public static class Message
@@ -98,7 +101,7 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             throw new RuntimeException(t);
         }
     }
@@ -118,7 +121,7 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             throw new RuntimeException(t);
         }
     }
@@ -140,7 +143,7 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
             long offset, 
             byte[] message)
     {
-        Log.write().debug("({},{},{}); {}", 
+        log.debug("({},{},{}); {}", 
             topic, 
             partition,
             offset,
@@ -153,14 +156,14 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
             Throwable t)
     {
         // Log error
-        Log.write().error(t.getMessage(), t);
+        log.error(t.getMessage(), t);
     }
 
     @Override
     public void ProducerClosed(
             KafkaProducerClient kafkaProducerClient)
     {
-        Log.write().warn("KAFKA PRODUCER WORKER EXIT");
+        log.warn("KAFKA PRODUCER WORKER EXIT");
     }
 
     private StateListener deviceStateListener = new StateListener()
@@ -229,7 +232,7 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
             }
             catch(Throwable t)
             {
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
             }
         }
     };

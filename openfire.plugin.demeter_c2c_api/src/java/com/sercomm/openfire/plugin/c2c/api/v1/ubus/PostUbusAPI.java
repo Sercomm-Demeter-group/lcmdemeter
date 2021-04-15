@@ -9,7 +9,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.sercomm.commons.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.umei.BodyPayload;
@@ -26,6 +28,8 @@ import com.sercomm.openfire.plugin.exception.DemeterException;
 @Path("umei/v1")
 public class PostUbusAPI
 {
+    private static final Logger log = LoggerFactory.getLogger(PostUbusAPI.class);
+
 	@POST
 	@Path("device/{nodeName}/ubus")
 	@Produces({MediaType.APPLICATION_JSON})
@@ -161,7 +165,7 @@ public class PostUbusAPI
                 originatorId);
 		}
 		
-        Log.write().info("({},{},{},{}); {}",
+		log.info("({},{},{},{}); {}",
             requestId,
             originatorId,
             nodeName,

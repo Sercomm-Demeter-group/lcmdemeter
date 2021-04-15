@@ -5,13 +5,15 @@ import java.io.File;
 import org.jivesoftware.openfire.container.Plugin;
 import org.jivesoftware.openfire.container.PluginManager;
 import org.jivesoftware.util.PropertyEventDispatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.component.ComponentManagerFactory;
 
-import com.sercomm.commons.util.Log;
 import com.sercomm.openfire.plugin.component.DeviceComponent;
 
 public class DemeterCorePlugin implements Plugin
 {
+    private static final Logger log = LoggerFactory.getLogger(DemeterCorePlugin.class);
     private final DeviceComponent demeterComponent = new DeviceComponent();
 
     public DemeterCorePlugin()
@@ -23,8 +25,6 @@ public class DemeterCorePlugin implements Plugin
             PluginManager manager,
             File pluginDirectory)
     {
-        Log.initialize("demeter", "10MB", 10);
-
         // add system properties listener
         PropertyEventDispatcher.addListener(SystemProperties.getInstance());
 
@@ -44,11 +44,11 @@ public class DemeterCorePlugin implements Plugin
             AppManager.getInstance().initialize();
             OwnershipManager.getInstance().initialize();
             
-            Log.write().info("({})={}", this.getClass().getName(), " LOADED");
+            log.info("({})={}", this.getClass().getName(), " LOADED");
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
     }
 
@@ -75,7 +75,7 @@ public class DemeterCorePlugin implements Plugin
          }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }        
     }
 }

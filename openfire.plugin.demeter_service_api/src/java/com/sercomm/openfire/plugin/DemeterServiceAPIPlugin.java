@@ -14,14 +14,13 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.jivesoftware.openfire.container.Plugin;
 import org.jivesoftware.openfire.container.PluginManager;
-
-import com.sercomm.commons.util.Log;
-import com.sercomm.openfire.plugin.service.filter.AuthorizationFilter;
-import com.sercomm.openfire.plugin.service.filter.CORSFilter;
-import com.sercomm.openfire.plugin.service.filter.ServiceAuthFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DemeterServiceAPIPlugin implements Plugin
 {
+    private static final Logger log = LoggerFactory.getLogger(DemeterServiceAPIPlugin.class);
+
     public final static String NAME = "demeter_service_api";
 
     private final static int DEFAULT_PORT = 8080;
@@ -40,7 +39,7 @@ public class DemeterServiceAPIPlugin implements Plugin
             
             // Jersey 2.22.2
             ResourceConfig resourceConfig = new ResourceConfig();
-            // register services
+            // register API.v1 (services)
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.AuthAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.IdentityAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.AppAPI.class);
@@ -48,15 +47,21 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.FileAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.UsageAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.EventAPI.class);
-            // register administrator services
+            // register API.v1 (administrator services)
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.AppAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.CatalogAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.DeviceAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.CustomerAPI.class);
+            // register API.v2
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.UMEiException.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.InternalErrorException.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AuthAPI.class);
             // register filters
-            resourceConfig.register(ServiceAuthFilter.class);
-            resourceConfig.register(AuthorizationFilter.class);
-            resourceConfig.register(CORSFilter.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.AuthFilter.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v2.AuthFilter.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.PermissionFilter.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v2.PermissionFilter.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.CORSFilter.class);
             
             // register exception mapper
             // create servlet container
@@ -71,7 +76,7 @@ public class DemeterServiceAPIPlugin implements Plugin
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             
             try
             {
@@ -93,7 +98,7 @@ public class DemeterServiceAPIPlugin implements Plugin
         }
         catch(Throwable t)
         {
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
         }
 	}
     

@@ -11,9 +11,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.DeviceManager;
 import com.sercomm.openfire.plugin.EndUserManager;
@@ -31,7 +33,9 @@ import com.sercomm.openfire.plugin.service.util.ServiceAPIUtil;
 @Path(IdentityAPI.URI_PATH)
 public class IdentityAPI extends ServiceAPIBase
 {
-    protected final static String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
+    private static final Logger log = LoggerFactory.getLogger(IdentityAPI.class);
+
+    protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v1/";    
 
     @GET
     @Path("identity")
@@ -80,14 +84,14 @@ public class IdentityAPI extends ServiceAPIBase
         catch(Throwable t)
         {
             errorMessage = t.getMessage();
-            Log.write().error(t.getMessage(), t);
+            log.error(t.getMessage(), t);
             response = createError(
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
         }
 
-        Log.write().info("({})={}",
+        log.info("({})={}",
             userId,
             errorMessage);
         

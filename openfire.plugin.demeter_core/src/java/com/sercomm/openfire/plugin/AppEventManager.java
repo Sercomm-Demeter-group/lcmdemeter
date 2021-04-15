@@ -13,10 +13,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.util.TaskEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.util.DateTime;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.data.frontend.AppEventRecord;
 import com.sercomm.openfire.plugin.define.AppEventType;
@@ -24,6 +25,8 @@ import com.sercomm.openfire.plugin.util.DbConnectionUtil;
 
 public class AppEventManager extends ManagerBase
 {
+    private static final Logger log = LoggerFactory.getLogger(AppEventManager.class);
+
     private final static int _BATCH_COUNT = 100;
     private final Queue<AppEventRecord> queue = new ConcurrentLinkedQueue<AppEventRecord>();
     private final TimerTask writeTask;
@@ -152,7 +155,7 @@ public class AppEventManager extends ManagerBase
             catch(Throwable t)
             {
                 errorMessage = t.getMessage();
-                Log.write().error(t.getMessage(), t);
+                log.error(t.getMessage(), t);
                 
                 // increase the retry count
                 for(AppEventRecord record : records)
@@ -173,7 +176,7 @@ public class AppEventManager extends ManagerBase
                 DbConnectionManager.closeConnection(conn);
             }
             
-            Log.write().debug("({},{})={}",
+            log.debug("({},{})={}",
                 insertCount,
                 queue.size(),
                 errorMessage);

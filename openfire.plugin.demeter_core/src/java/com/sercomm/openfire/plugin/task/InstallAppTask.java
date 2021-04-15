@@ -7,9 +7,10 @@ import java.util.Map;
 import java.util.TimerTask;
 
 import org.jivesoftware.database.DbConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.util.Json;
-import com.sercomm.commons.util.Log;
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.DeviceManager;
 import com.sercomm.openfire.plugin.SystemProperties;
@@ -24,6 +25,8 @@ import com.sercomm.openfire.plugin.profile.Profile;
 
 public class InstallAppTask extends TimerTask
 {
+    private static final Logger log = LoggerFactory.getLogger(InstallAppTask.class);
+
     public interface Listener
     {
         void onDelivered(
@@ -335,7 +338,7 @@ public class InstallAppTask extends TimerTask
             catch(Throwable ignored) {}
         }
         
-        Log.write().info("({},{},{},{},{})={}",
+        log.info("({},{},{},{},{})={}",
             this.serial,
             this.mac,
             this.app.getPublisher(),

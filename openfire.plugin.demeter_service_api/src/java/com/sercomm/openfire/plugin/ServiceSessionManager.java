@@ -47,4 +47,9 @@ public class ServiceSessionManager extends ManagerBase
     {
         this.caches.put(cache.getSessionId(), cache);
     }
+    
+    public void removeSession(String sessionId)
+    {
+        this.caches.remove(sessionId);
+    }
 }

@@ -15,8 +15,9 @@ public class ServiceSessionCache implements CacheBase
 {
     private String sessionId;
     private String userId;
+    private String storedKey;
     private EndUserRole endUserRole;
-    
+
     public ServiceSessionCache()
     {
     }
@@ -40,6 +41,16 @@ public class ServiceSessionCache implements CacheBase
     {
         this.userId = userId;
     }
+
+    public String getStoredKey()
+    {
+        return this.storedKey;
+    }
+    
+    public void setStoredKey(String storedKey)
+    {
+        this.storedKey = storedKey;
+    }
     
     public EndUserRole getEndUserRole()
     {
@@ -50,7 +61,7 @@ public class ServiceSessionCache implements CacheBase
     {
         this.endUserRole = endUserRole;
     }
-    
+
     @Override
     public int getCachedSize()
         throws CannotCalculateSizeException
@@ -62,6 +73,8 @@ public class ServiceSessionCache implements CacheBase
         size += CacheSizes.sizeOfString(this.sessionId);
         // name
         size += CacheSizes.sizeOfString(this.userId);
+        // storedKey
+        size += CacheSizes.sizeOfString(this.storedKey);
         // endUserRole
         size += CacheSizes.sizeOfString(null == this.endUserRole ? XStringUtil.BLANK : this.endUserRole.toString());
         
@@ -75,6 +88,7 @@ public class ServiceSessionCache implements CacheBase
     {
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.sessionId);
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.userId);
+        ExternalizableUtil.getInstance().writeSafeUTF(out, this.storedKey);
         ExternalizableUtil.getInstance().writeSafeUTF(out, null == this.endUserRole ? XStringUtil.BLANK : this.endUserRole.toString());
     }
 
@@ -85,6 +99,7 @@ public class ServiceSessionCache implements CacheBase
     {
         this.sessionId = ExternalizableUtil.getInstance().readSafeUTF(in);
         this.userId = ExternalizableUtil.getInstance().readSafeUTF(in);
+        this.storedKey = ExternalizableUtil.getInstance().readSafeUTF(in);
         this.endUserRole = EndUserRole.fromString(ExternalizableUtil.getInstance().readSafeUTF(in));
     }
 

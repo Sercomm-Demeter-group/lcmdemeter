@@ -13,8 +13,8 @@ import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.session.ClientSession;
 import org.jivesoftware.openfire.session.LocalSession;
 import org.jivesoftware.util.JiveGlobals;
-
-import com.sercomm.commons.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This Servlet enables XMPP over WebSocket (RFC 7395) for Openfire.
@@ -27,6 +27,8 @@ import com.sercomm.commons.util.Log;
 public class OpenfireWebSocketServlet extends WebSocketServlet 
 {
     private static final long serialVersionUID = 7583369957545700232L;
+
+    private static final Logger log = LoggerFactory.getLogger(OpenfireWebSocketServlet.class);
 
     @Override
     public void destroy()
@@ -75,10 +77,10 @@ public class OpenfireWebSocketServlet extends WebSocketServlet
                 } 
                 catch (Exception e) 
                 {
-                    Log.write().error(MessageFormat.format("Unable to load websocket factory: {0} ({1})", e.getClass().getName(), e.getMessage()));
+                    log.error(MessageFormat.format("Unable to load websocket factory: {0} ({1})", e.getClass().getName(), e.getMessage()));
                 }
                 
-                Log.write().trace("Failed to create websocket for {}:{} make a request at {}", req.getRemoteAddress(), req.getRemotePort(), req.getRequestPath() );
+                log.trace("Failed to create websocket for {}:{} make a request at {}", req.getRemoteAddress(), req.getRemotePort(), req.getRequestPath() );
                 return null;
             }
         });
