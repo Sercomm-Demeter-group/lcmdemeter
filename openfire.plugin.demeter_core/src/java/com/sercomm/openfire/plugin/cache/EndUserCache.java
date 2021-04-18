@@ -28,7 +28,7 @@ import com.sercomm.openfire.plugin.util.ValueUtil;
 
 public class EndUserCache implements CacheBase
 {
-    private static final Logger log = LoggerFactory.getLogger(EndUserCache.class);
+    // private static final Logger log = LoggerFactory.getLogger(EndUserCache.class);
 
     private boolean isInitialized = false;
     
@@ -247,7 +247,7 @@ public class EndUserCache implements CacheBase
             PreparedStatement stmt = null;
             
             do
-            {               
+            {
                 // perhaps new values
                 if(ValueUtil.isModified(cache.getEndUserRole().toString(), this.getEndUserRole().toString()) ||
                    ValueUtil.isModified(cache.getStoredKey(), this.getStoredKey()) ||
@@ -269,10 +269,9 @@ public class EndUserCache implements CacheBase
                         
                         stmt.executeUpdate();
                     }
-                    catch(Throwable t)
+                    catch(SQLException e)
                     {
-                        log.error(t.getMessage(), t);
-                        break;
+                        throw new DemeterException(e);
                     }
                     finally
                     {
@@ -316,10 +315,10 @@ public class EndUserCache implements CacheBase
                     
                     stmt.executeBatch();
                 }
-                catch(Throwable t)
+                catch(SQLException e)
                 {
                     abort = true;
-                    log.error(t.getMessage(), t);
+                    throw new DemeterException(e);
                 }
                 finally
                 {
@@ -395,7 +394,8 @@ public class EndUserCache implements CacheBase
         return this.uuid;
     }
 
-    public void deleteProperties() 
+    public void deleteProperties()
+    throws SQLException
     {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -407,10 +407,6 @@ public class EndUserCache implements CacheBase
             
             stmt.executeUpdate();
         }
-        catch (SQLException e) 
-        {
-            log.error(e.getMessage(), e);
-        }
         finally 
         {
             DbConnectionManager.closeConnection(stmt, conn);
@@ -418,6 +414,7 @@ public class EndUserCache implements CacheBase
     }
     
     private void deleteProperties(Map<String, String> properties)
+    throws SQLException
     {
         if(true == properties.isEmpty())
         {
@@ -448,10 +445,10 @@ public class EndUserCache implements CacheBase
             
             stmt.executeBatch();
         }
-        catch(Throwable t) 
+        catch(SQLException e) 
         {
-            log.error(t.getMessage(), t);
             abort = true;
+            throw e;
         }
         finally 
         {

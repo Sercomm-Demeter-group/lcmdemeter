@@ -18,8 +18,6 @@ import org.jivesoftware.openfire.user.UserNotFoundException;
 import org.jivesoftware.util.cache.CacheSizes;
 import org.jivesoftware.util.cache.CannotCalculateSizeException;
 import org.jivesoftware.util.cache.ExternalizableUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.util.XStringUtil;
@@ -33,8 +31,6 @@ import com.sercomm.openfire.plugin.util.ValueUtil;
 
 public class DeviceCache implements CacheBase
 {
-    private static final Logger log = LoggerFactory.getLogger(DeviceCache.class);
-
     private boolean isInitialized = false;
 
     private final static String TABLE_S_DEVICE_PROP = "sDeviceProp";
@@ -283,7 +279,15 @@ public class DeviceCache implements CacheBase
             }
 
             // update database
-            this.updateProperties(properties);
+            try
+            {
+                this.updateProperties(properties);
+            }
+            catch(SQLException e)
+            {
+                throw new DemeterException(e);
+            }
+
             // update cluster caches
             DeviceManager.getInstance().updateDeviceCache(this.serial, this.mac, this);
         }        
@@ -379,6 +383,7 @@ public class DeviceCache implements CacheBase
     }
 
     private void updateProperties(Map<String, String> properties)
+    throws SQLException
     {
         if(true == properties.isEmpty())
         {
@@ -412,10 +417,10 @@ public class DeviceCache implements CacheBase
             
             stmt.executeBatch();            
         }
-        catch (SQLException e) 
+        catch(SQLException e) 
         {
             abort = true;
-            log.error(e.getMessage(), e);
+            throw e;
         }
         finally 
         {
@@ -425,7 +430,8 @@ public class DeviceCache implements CacheBase
         }
     }
 
-    public void deleteProperties() 
+    public void deleteProperties()
+    throws SQLException
     {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -438,10 +444,6 @@ public class DeviceCache implements CacheBase
             
             stmt.executeUpdate();
         }
-        catch (SQLException e) 
-        {
-            log.error(e.getMessage(), e);
-        }
         finally 
         {
             DbConnectionManager.closeConnection(stmt, conn);
@@ -449,6 +451,7 @@ public class DeviceCache implements CacheBase
     }
 
     private void deleteProperties(Map<String, String> properties)
+    throws SQLException
     {
         if(true == properties.isEmpty())
         {
@@ -480,10 +483,10 @@ public class DeviceCache implements CacheBase
             
             stmt.executeBatch();
         }
-        catch(Throwable t) 
+        catch(SQLException e) 
         {
             abort = true;
-            log.error(t.getMessage(), t);
+            throw e;
         }
         finally 
         {

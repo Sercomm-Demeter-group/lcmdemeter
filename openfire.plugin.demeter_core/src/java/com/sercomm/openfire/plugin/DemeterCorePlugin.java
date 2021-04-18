@@ -37,6 +37,7 @@ public class DemeterCorePlugin implements Plugin
             SystemRecordManager.getInstance().initialize();
             AppEventManager.getInstance().initialize();
             WebSocketEntryManager.getInstance().initialize();
+            DeviceModelManager.getInstance().initialize();
             DeviceManager.getInstance().initialize();
             //StanzaManager.getInstance().initialize();
             UbusManager.getInstance().initialize();
@@ -66,6 +67,7 @@ public class DemeterCorePlugin implements Plugin
             UbusManager.getInstance().uninitialize();
             //StanzaManager.getInstance().uninitialize();
             DeviceManager.getInstance().uninitialize();
+            DeviceModelManager.getInstance().uninitialize();
             WebSocketEntryManager.getInstance().uninitialize();
             AppEventManager.getInstance().uninitialize();
             SystemRecordManager.getInstance().uninitialize();

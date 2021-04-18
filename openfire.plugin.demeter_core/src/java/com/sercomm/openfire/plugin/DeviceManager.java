@@ -241,7 +241,7 @@ public class DeviceManager extends ManagerBase
     {
         this.deviceCaches = CacheFactory.createCache(CACHE_NAME);
         this.deviceCaches.setMaxCacheSize(-1);
-        this.deviceCaches.setMaxLifetime(-1);
+        this.deviceCaches.setMaxLifetime(86400 * 1000L);
         
         UserEventDispatcher.addListener(this.userEventListener);
         SessionEventDispatcher.addListener(this.sessionEventListener);        

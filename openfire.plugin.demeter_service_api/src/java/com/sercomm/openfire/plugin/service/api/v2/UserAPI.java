@@ -30,7 +30,7 @@ public class UserAPI extends ServiceAPIBase
 {
     private static final Logger log = LoggerFactory.getLogger(UserAPI.class);
 
-    protected final static String URI_PATH = ServiceAPIBase.URI_PATH + "v2/";
+    protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v2/";
     
     @Context 
     private HttpServletRequest request;
