@@ -39,7 +39,7 @@ public class EndUserCache implements CacheBase
             String.format("UPDATE `%s` SET `role`=?,`storedKey`=?,`encryptedPassword`=?,`valid`=? WHERE `id`=?",
                 TABLE_S_END_USER);
     private final static String SQL_QUERY_END_USER =
-            String.format("SELECT `id`,`role`,`storedKey`,`encryptedPassword`,`valid`,`creationTime` FROM `%s` WHERE `id`=?",
+            String.format("SELECT `id`,`uuid`,`role`,`storedKey`,`encryptedPassword`,`valid`,`creationTime` FROM `%s` WHERE `id`=?",
                 TABLE_S_END_USER);
     private static final String SQL_QUERY_PROPERTIES = 
             String.format("SELECT `name`,`propValue` FROM `%s` WHERE `userId`=?", 
@@ -56,6 +56,7 @@ public class EndUserCache implements CacheBase
                 TABLE_S_END_USER_PROP);
 
     private String id;
+    private String uuid;
     private EndUserRole endUserRole;
     private String storedKey;
     private String encryptedPassword;
@@ -83,6 +84,16 @@ public class EndUserCache implements CacheBase
     public void setId(String id)
     {
         this.id = id;
+    }
+
+    public String getUUID()
+    {
+        return this.uuid;
+    }
+    
+    public void setUUID(String uuid)
+    {
+        this.uuid = uuid;
     }
 
     public EndUserRole getEndUserRole()
@@ -176,6 +187,7 @@ public class EndUserCache implements CacheBase
                         throw new SQLException("USER CANNOT BE FOUND: " + this.id);                        
                     }
                     
+                    this.uuid = rs.getString("uuid");
                     this.endUserRole = EndUserRole.fromString(rs.getString("role"));
                     this.storedKey = rs.getString("storedKey");
                     this.encryptedPassword = rs.getString("encryptedPassword");
@@ -329,6 +341,8 @@ public class EndUserCache implements CacheBase
         size += CacheSizes.sizeOfObject();
         // name
         size += CacheSizes.sizeOfString(this.id);
+        // UUID
+        size += CacheSizes.sizeOfString(this.uuid);
         // endUserRole
         size += CacheSizes.sizeOfString(this.endUserRole == null ? XStringUtil.BLANK : this.endUserRole.toString());
         // storedKey
@@ -351,6 +365,7 @@ public class EndUserCache implements CacheBase
     throws IOException
     {
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.id);
+        ExternalizableUtil.getInstance().writeSafeUTF(out, this.uuid);
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.endUserRole == null ? XStringUtil.BLANK : this.endUserRole.toString());
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.storedKey);
         ExternalizableUtil.getInstance().writeSafeUTF(out, this.encryptedPassword);
@@ -365,6 +380,7 @@ public class EndUserCache implements CacheBase
     throws IOException, ClassNotFoundException
     {
         this.id = ExternalizableUtil.getInstance().readSafeUTF(in);
+        this.uuid = ExternalizableUtil.getInstance().readSafeUTF(in);
         this.endUserRole = EndUserRole.fromString(ExternalizableUtil.getInstance().readSafeUTF(in));
         this.storedKey = ExternalizableUtil.getInstance().readSafeUTF(in);
         this.encryptedPassword = ExternalizableUtil.getInstance().readSafeUTF(in);
@@ -376,7 +392,7 @@ public class EndUserCache implements CacheBase
     @Override
     public String getUID()
     {
-        return this.id;
+        return this.uuid;
     }
 
     public void deleteProperties() 

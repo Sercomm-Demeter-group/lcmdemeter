@@ -90,7 +90,7 @@ public class AuthAPI extends ServiceAPIBase
                XStringUtil.isBlank(password))
             {
                 status = Response.Status.BAD_REQUEST;
-                errorMessage = "MANDATORY ARGUMENT(S) CANNOT BE BLANK";
+                errorMessage = "MANDATORY PARAMETER(S) CANNOT BE BLANK";
 
                 throw new UMEiException(
                     errorMessage,
