@@ -210,7 +210,10 @@ public class UsersAPI extends ServiceAPIBase
 
             // response
             BodyPayload bodyPayload = new BodyPayload()
-                    .withMeta(new Meta().withFrom(from).withSize(result.size()).withTotal(totalCount))
+                    .withMeta(new Meta()
+                        .withFrom(from)
+                        .withSize(result.size())
+                        .withTotal(totalCount))
                     .withData(result);
 
             response = Response
