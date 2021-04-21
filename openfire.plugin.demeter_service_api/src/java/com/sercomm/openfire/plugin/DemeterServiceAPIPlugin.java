@@ -60,6 +60,7 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.UsersAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.DeviceModelAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.DeviceModelsAPI.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.DevicesAPI.class);
             // register filters
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.AuthFilter.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v2.AuthFilter.class);

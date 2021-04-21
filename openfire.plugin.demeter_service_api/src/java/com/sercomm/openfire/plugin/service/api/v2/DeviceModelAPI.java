@@ -72,7 +72,7 @@ public class DeviceModelAPI extends ServiceAPIBase
                 PostDeviceModelRequest request = bodyPayload.getDesire(
                     PostDeviceModelRequest.class);
 
-                modelName = request.getModelName();
+                modelName = request.getName();
             }
             catch(Throwable ignored)
             {
@@ -319,16 +319,16 @@ public class DeviceModelAPI extends ServiceAPIBase
 
     public static class PostDeviceModelRequest
     {
-        private String modelName;
+        private String name;
 
-        public String getModelName()
+        public String getName()
         {
-            return modelName;
+            return name;
         }
 
-        public void setModelName(String modelName)
+        public void setName(String name)
         {
-            this.modelName = modelName;
+            this.name = name;
         }
     }
     
@@ -360,6 +360,5 @@ public class DeviceModelAPI extends ServiceAPIBase
         {
             this.status = status;
         }
-        
     }
 }
