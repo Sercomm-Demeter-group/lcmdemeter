@@ -60,6 +60,8 @@ public class UsersAPI extends ServiceAPIBase
         {
             int totalCount = 0;
 
+            List<Object> arguments = new ArrayList<>();
+
             // query total rows count
             StringBuilder builder = new StringBuilder();
             builder.append("SELECT COUNT(*) AS `count` FROM `sEndUser` WHERE ");
@@ -73,33 +75,27 @@ public class UsersAPI extends ServiceAPIBase
                 String[] tokens = filter.split(":", 2);
                 if(2 != tokens.length)
                 {
-                    continue;
-                }
-
-                if(0 != tokens[0].compareTo("name") &&
-                   0 != tokens[0].compareTo("role"))
-                {
-                    status = Response.Status.BAD_REQUEST;
-                    errorMessage = "INVALID FILTER: " + tokens[0];
-
                     throw new UMEiException(
-                        errorMessage,
-                        status);
+                        "INVALID FILTER: " + filter,
+                        Response.Status.BAD_REQUEST);
                 }
 
-                if(0 == tokens[0].compareTo("role"))
+                switch(tokens[0])
                 {
-                    filterRole = true;
+                    case "name":
+                        builder.append("`name` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    case "role":
+                        filterRole = true;
+                        builder.append("`role` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    default:
+                        throw new UMEiException(
+                            "INVALID FILTER ATTRIBUTE: " + tokens[0],
+                            Response.Status.BAD_REQUEST);
                 }
-
-                // locate to the target column
-                if(0 == tokens[0].compareTo("name"))
-                {
-                    tokens[0] = "id";
-                }
-
-                builder.append("`").append(tokens[0]).append("` LIKE ")
-                    .append("'").append(tokens[1]).append("%' ");
 
                 if(iterator.hasNext())
                 {
@@ -124,6 +120,11 @@ public class UsersAPI extends ServiceAPIBase
             {
                 conn = DbConnectionManager.getConnection();
                 stmt = conn.prepareStatement(builder.toString());
+
+                for(int idx = 0; idx < arguments.size(); idx++)
+                {
+                    stmt.setObject(idx + 1, arguments.get(idx));
+                }
                 
                 rs = stmt.executeQuery();
                 rs.next();
@@ -137,6 +138,8 @@ public class UsersAPI extends ServiceAPIBase
 
             // query rows
             builder = new StringBuilder();
+            arguments.clear();
+
             builder.append("SELECT * FROM `sEndUser` WHERE ");
 
             iterator = filters.iterator();
@@ -147,20 +150,27 @@ public class UsersAPI extends ServiceAPIBase
                 String[] tokens = filter.split(":", 2);
                 if(2 != tokens.length)
                 {
-                    continue;
+                    throw new UMEiException(
+                        "INVALID FILTER: " + filter,
+                        Response.Status.BAD_REQUEST);
                 }
 
-                // since filters have been verified when querying rows count
-                // it is not necessary to verify again here
-
-                // locate to the target column
-                if(0 == tokens[0].compareTo("name"))
+                switch(tokens[0])
                 {
-                    tokens[0] = "id";
+                    case "name":
+                        builder.append("`name` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    case "role":
+                        filterRole = true;
+                        builder.append("`role` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    default:
+                        throw new UMEiException(
+                            "INVALID FILTER ATTRIBUTE: " + tokens[0],
+                            Response.Status.BAD_REQUEST);
                 }
-
-                builder.append("`").append(tokens[0]).append("` LIKE ")
-                    .append("'").append(tokens[1]).append("%' ");
 
                 if(iterator.hasNext())
                 {
@@ -178,16 +188,24 @@ public class UsersAPI extends ServiceAPIBase
                builder.append("`role` IN ('admin','editor','operator') ");
             }
 
-            builder.append("LIMIT ")
+            if(null != from && null != size)
+            {
+                builder.append("LIMIT ")
                 .append(Integer.toString(from))
                 .append(",")
                 .append(Integer.toString(size));
+            }
 
             List<GetUserResult> result = null;
             try
             {
                 conn = DbConnectionManager.getConnection();
                 stmt = conn.prepareStatement(builder.toString());
+                for(int idx = 0; idx < arguments.size(); idx++)
+                {
+                    stmt.setObject(idx + 1, arguments.get(idx));
+                }
+
                 rs = stmt.executeQuery();
                 
                 result = new ArrayList<>();
