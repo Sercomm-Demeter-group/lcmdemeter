@@ -149,7 +149,7 @@ public class AppManager extends ManagerBase
     {
         if(null != this.getApp(publisher, name, modelName))
         {
-            throw new DemeterException("APP ALREADY EXISTS");
+            throw new DemeterException("APPLICATION ALREADY EXISTS");
         }
 
         Connection conn = null;
@@ -477,7 +477,7 @@ public class AppManager extends ManagerBase
         App app = this.getApp(appId);
         if(null == app)
         {
-            throw new DemeterException("APP DOES NOT EXIST");
+            throw new DemeterException("APP CANNOT BE FOUND");
         }
                 
         // backup the App's versions information at first

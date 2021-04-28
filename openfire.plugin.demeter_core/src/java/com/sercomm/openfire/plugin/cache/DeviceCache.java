@@ -285,7 +285,7 @@ public class DeviceCache implements CacheBase
             }
             catch(SQLException e)
             {
-                throw new DemeterException(e);
+                throw new DemeterException(e.getMessage());
             }
 
             // update cluster caches

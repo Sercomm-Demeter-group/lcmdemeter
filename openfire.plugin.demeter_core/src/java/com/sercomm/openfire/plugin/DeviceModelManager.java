@@ -93,7 +93,7 @@ public class DeviceModelManager extends ManagerBase
             }
             catch(SQLException e)
             {
-                throw new DemeterException(e);
+                throw new DemeterException(e.getMessage());
             }
         }
 
@@ -144,7 +144,7 @@ public class DeviceModelManager extends ManagerBase
             }
             catch(SQLException e)
             {
-                throw new DemeterException(e);
+                throw new DemeterException(e.getMessage());
             }
         }
 

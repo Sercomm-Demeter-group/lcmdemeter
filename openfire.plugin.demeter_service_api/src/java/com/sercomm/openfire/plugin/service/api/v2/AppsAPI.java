@@ -29,11 +29,11 @@ import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 
-@Path(UsersAPI.URI_PATH)
-@RequireRoles({EndUserRole.ADMIN})
-public class UsersAPI extends ServiceAPIBase
+@Path(AppsAPI.URI_PATH)
+@RequireRoles({EndUserRole.ADMIN, EndUserRole.EDITOR})
+public class AppsAPI extends ServiceAPIBase
 {
-    private static final Logger log = LoggerFactory.getLogger(UsersAPI.class);
+    private static final Logger log = LoggerFactory.getLogger(AppsAPI.class);
 
     protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v2/";
 
@@ -41,7 +41,7 @@ public class UsersAPI extends ServiceAPIBase
     private HttpServletRequest request;
 
     @GET
-    @Path("users")
+    @Path("applications")
     @Produces({MediaType.APPLICATION_JSON})
     public Response get(
             @QueryParam("from") Integer from,
@@ -63,9 +63,13 @@ public class UsersAPI extends ServiceAPIBase
             int totalCount = 0;
             // query total rows count
             StringBuilder builder = new StringBuilder();
-            builder.append("SELECT COUNT(*) AS `count` FROM `sEndUser` WHERE ");
+            builder.append("SELECT COUNT(*) AS `count` FROM `sApp` ");
+            
+            if(!filters.isEmpty())
+            {
+                builder.append("WHERE ");
+            }
 
-            boolean filterRole = false;
             Iterator<String> iterator = filters.iterator();
             while(iterator.hasNext())
             {
@@ -82,12 +86,15 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`id` LIKE ? ");
+                        builder.append("`name` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
-                    case "role":
-                        filterRole = true;
-                        builder.append("`role` LIKE ? ");
+                    case "publisher":
+                        builder.append("`publisher` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    case "model":
+                        builder.append("`model` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     default:
@@ -100,16 +107,6 @@ public class UsersAPI extends ServiceAPIBase
                 {
                     builder.append("AND ");
                 }
-            }
-
-            if(!filterRole)
-            {
-               if(!filters.isEmpty())
-               {
-                   builder.append("AND ");
-               }
-
-               builder.append("`role` IN ('admin','editor','operator') ");
             }
 
             Connection conn = null;
@@ -139,7 +136,12 @@ public class UsersAPI extends ServiceAPIBase
             builder = new StringBuilder();
             arguments.clear();
 
-            builder.append("SELECT * FROM `sEndUser` WHERE ");
+            builder.append("SELECT * FROM `sApp` ");
+
+            if(!filters.isEmpty())
+            {
+                builder.append("WHERE ");
+            }
 
             iterator = filters.iterator();
             while(iterator.hasNext())
@@ -150,12 +152,15 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`id` LIKE ? ");
+                        builder.append("`name` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
-                    case "role":
-                        filterRole = true;
-                        builder.append("`role` LIKE ? ");
+                    case "publisher":
+                        builder.append("`publisher` LIKE ? ");
+                        arguments.add(tokens[1] + "%");
+                        break;
+                    case "model":
+                        builder.append("`model` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     default:
@@ -169,17 +174,7 @@ public class UsersAPI extends ServiceAPIBase
                     builder.append("AND ");
                 }
             }
-
-            if(!filterRole)
-            {
-               if(!filters.isEmpty())
-               {
-                   builder.append("AND ");
-               }
-               
-               builder.append("`role` IN ('admin','editor','operator') ");
-            }
-
+            
             if(null != from && null != size)
             {
                 builder.append("LIMIT ")
@@ -188,7 +183,7 @@ public class UsersAPI extends ServiceAPIBase
                 .append(Integer.toString(size));
             }
 
-            List<GetUserResult> result = null;
+            List<GetApplicationResult> result = null;
             try
             {
                 conn = DbConnectionManager.getConnection();
@@ -204,10 +199,12 @@ public class UsersAPI extends ServiceAPIBase
                 
                 while(rs.next())
                 {
-                    GetUserResult object = new GetUserResult();
-                    object.setUserId(rs.getString("uuid"));
-                    object.setName(rs.getString("id"));
-                    object.setRole(rs.getString("role"));
+                    GetApplicationResult object = new GetApplicationResult();
+                    object.setApplicationId(rs.getString("id"));
+                    object.setName(rs.getString("name"));
+                    object.setPublisher(rs.getString("publisher"));
+                    object.setModel(rs.getString("model"));
+                    object.setDescription(rs.getString("description"));
                     object.setCreationTime(DateTime.from(rs.getLong("creationTime")).toString(DateTime.FORMAT_ISO_MS));
 
                     result.add(object);
@@ -217,7 +214,7 @@ public class UsersAPI extends ServiceAPIBase
             {
                 DbConnectionManager.closeConnection(rs, stmt, conn);
             }
-
+            
             // response
             BodyPayload bodyPayload = new BodyPayload()
                     .withMeta(new Meta()
@@ -256,20 +253,22 @@ public class UsersAPI extends ServiceAPIBase
         return response;
     }
     
-    public static class GetUserResult
+    public static class GetApplicationResult
     {
-        private String userId;
+        private String applicationId;
         private String name;
-        private String role;
+        private String publisher;
+        private String model;
+        private String description;
         private String creationTime;
 
-        public String getUserId()
+        public String getApplicationId()
         {
-            return userId;
+            return applicationId;
         }
-        public void setUserId(String userId)
+        public void setApplicationId(String applicationId)
         {
-            this.userId = userId;
+            this.applicationId = applicationId;
         }
         public String getName()
         {
@@ -279,13 +278,29 @@ public class UsersAPI extends ServiceAPIBase
         {
             this.name = name;
         }
-        public String getRole()
+        public String getPublisher()
         {
-            return role;
+            return publisher;
         }
-        public void setRole(String role)
+        public void setPublisher(String publisher)
         {
-            this.role = role;
+            this.publisher = publisher;
+        }
+        public String getModel()
+        {
+            return model;
+        }
+        public void setModel(String model)
+        {
+            this.model = model;
+        }
+        public String getDescription()
+        {
+            return description;
+        }
+        public void setDescription(String description)
+        {
+            this.description = description;
         }
         public String getCreationTime()
         {

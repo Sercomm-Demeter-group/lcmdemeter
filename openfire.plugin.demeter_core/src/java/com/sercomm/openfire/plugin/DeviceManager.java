@@ -283,7 +283,7 @@ public class DeviceManager extends ManagerBase
             }
             catch(SQLException e)
             {
-                throw new DemeterException(e);
+                throw new DemeterException(e.getMessage());
             }
         }
         

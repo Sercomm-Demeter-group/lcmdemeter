@@ -271,7 +271,7 @@ public class EndUserCache implements CacheBase
                     }
                     catch(SQLException e)
                     {
-                        throw new DemeterException(e);
+                        throw new DemeterException(e.getMessage());
                     }
                     finally
                     {
@@ -318,7 +318,7 @@ public class EndUserCache implements CacheBase
                 catch(SQLException e)
                 {
                     abort = true;
-                    throw new DemeterException(e);
+                    throw new DemeterException(e.getMessage());
                 }
                 finally
                 {
