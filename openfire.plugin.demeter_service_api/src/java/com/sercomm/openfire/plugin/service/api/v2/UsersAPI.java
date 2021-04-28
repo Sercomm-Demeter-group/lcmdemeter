@@ -83,7 +83,7 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`name` LIKE ? ");
+                        builder.append("`id` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     case "role":
@@ -158,7 +158,7 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`name` LIKE ? ");
+                        builder.append("`id` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     case "role":
