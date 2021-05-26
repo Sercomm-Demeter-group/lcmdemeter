@@ -2,7 +2,9 @@ package com.sercomm.openfire.plugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.io.FileUtils;
 import org.jivesoftware.database.DbConnectionManager;
 
 import com.sercomm.common.util.Algorithm;
@@ -24,7 +27,6 @@ import com.sercomm.openfire.plugin.data.frontend.AppSubscription;
 import com.sercomm.openfire.plugin.data.frontend.AppVersion;
 import com.sercomm.openfire.plugin.exception.DemeterException;
 import com.sercomm.openfire.plugin.util.DbConnectionUtil;
-import com.sercomm.openfire.plugin.util.FileUtil;
 import com.sercomm.openfire.plugin.util.IpkUtil;
 import com.sercomm.openfire.plugin.util.StorageUtil;
 
@@ -49,8 +51,14 @@ public class AppManager extends ManagerBase
                 TABLE_S_APP_ICON);
     private final static String SQL_INSERT_APP_VERSION =
             String.format("INSERT INTO `%s`" + 
-                "(`id`,`appId`,`version`,`filename`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`) VALUES(?,?,?,?,?,?,?,?)",
+                "(`id`,`appId`,`version`,`status`,`filename`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`) " +
+                "VALUES(?,?,?,?,?,?,?,?,?)",
                 TABLE_S_APP_VERSION);
+    private final static String SQL_UPDATE_APP_VERSION =
+            String.format("UPDATE `%s` SET " + 
+                    "`version`=?,`status`=?,`ipkFileSize`=? " +
+                    "WHERE `id`=?",
+                    TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP =
             String.format("SELECT * FROM `%s` WHERE `id`=?",
                 TABLE_S_APP);
@@ -78,6 +86,9 @@ public class AppManager extends ManagerBase
     private final static String SQL_QUERY_APP_LATEST_VERSION =
             String.format("SELECT * FROM `%s` WHERE `appId`=? ORDER BY `creationTime` DESC LIMIT 1",
                 TABLE_S_APP_VERSION);
+    private final static String SQL_DELETE_APP_VERSION =
+            String.format("DELETE FROM `%s` WHERE `appId`=? AND `id`=?",
+                TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP_ICON =
             String.format("SELECT * FROM `%s` WHERE `iconId`=?",
                 TABLE_S_APP_ICON);
@@ -87,9 +98,6 @@ public class AppManager extends ManagerBase
     private final static String SQL_DELETE_APP_ICON_BY_APP_ID =
             String.format("DELETE FROM `%s` WHERE `appId`=?",
                 TABLE_S_APP_ICON);
-    private final static String SQL_DELETE_APP_VERSIONS_BY_APP_ID =
-            String.format("DELETE FROM `%s` WHERE `appId`=?",
-                TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP_INSTALLED_COUNT =
             String.format("SELECT SUM(`installedCount`) AS `count` FROM `%s` WHERE `appId`=?",
                 TABLE_S_APP_VERSION);
@@ -455,7 +463,7 @@ public class AppManager extends ManagerBase
             {
                 if(!rs.next())
                 {
-                    break;
+                    throw new DemeterException("APP CANNOT BE FOUND");
                 }
                 
                 object = App.from(rs);
@@ -474,42 +482,37 @@ public class AppManager extends ManagerBase
             String appId)
     throws DemeterException, Throwable
     {
+        // obtain the App object and check if the App ID is valid
         App app = this.getApp(appId);
-        if(null == app)
-        {
-            throw new DemeterException("APP CANNOT BE FOUND");
-        }
                 
         // backup the App's versions information at first
-        List<AppVersion> appVersions = this.getAppVersions(appId);
+        List<AppVersion> appVersions = this.getAppVersions(app.getId());
 
         boolean abort = false;
         Connection conn = null;
         PreparedStatement stmt = null;
         try
         {
-            // TODO: uninstall the installed App from gateway -> is it necessary?
-
             conn = DbConnectionManager.getConnection();
             conn = DbConnectionUtil.openTransaction(conn);
-            
-            // delete versions of the App
-            if(false == appVersions.isEmpty())
+
+            // delete versions of the application
+            for(AppVersion appVersion: appVersions)
             {
-                this.deleteAppVersions(conn, appId);
+                this.deleteAppVersion(app.getId(), appVersion.getId());
             }
 
             // delete App subscriptions
-            this.deleteAppSubscriptions(conn, appId);
+            this.deleteAppSubscriptions(conn, app.getId());
             
             // delete App icon
-            this.deleteAppIcon(conn, appId);
+            this.deleteAppIcon(conn, app.getId());
             
             // delete the App
             int idx;
             idx = 0;
             stmt = conn.prepareStatement(SQL_DELETE_APP);                        
-            stmt.setString(++idx, appId);            
+            stmt.setString(++idx, app.getId());            
             stmt.executeUpdate();
         }
         catch(Throwable t)
@@ -538,7 +541,7 @@ public class AppManager extends ManagerBase
                 
                     try
                     {
-                        FileUtil.forceDeleteDirectory(Paths.get(folderPath));
+                        FileUtils.forceDelete(new File(folderPath));
                     }
                     catch(Throwable ignored) {}
                     
@@ -547,27 +550,46 @@ public class AppManager extends ManagerBase
         }
     }
 
-    private void deleteAppVersions(
-            Connection conn,
-            String appId)
+    public void deleteAppVersion(
+            String appId,
+            String versionId)
     throws DemeterException, Throwable
     {
+        AppVersion appVersion = this.getAppVersion(versionId);
+        
+        boolean abortTransaction = true;
+        Connection conn = null;
         PreparedStatement stmt = null;
         try
         {
-            stmt = conn.prepareStatement(SQL_DELETE_APP_VERSIONS_BY_APP_ID);
-            
+            // delete the row from database
+            conn = DbConnectionManager.getConnection();
+            DbConnectionUtil.openTransaction(conn);
+            stmt = conn.prepareStatement(SQL_DELETE_APP_VERSION);
+
             int idx = 0;
             stmt.setString(++idx, appId);
-            
+            stmt.setString(++idx, versionId);
             stmt.executeUpdate();
+            
+            // delete the package's folder from volume
+            File ipkFile = new File(appVersion.getIPKFilePath());
+            FileUtils.forceDelete(ipkFile.getParentFile());
+
+            abortTransaction = false;
+        }
+        catch(Throwable t)
+        {
+            throw t;
         }
         finally
         {
             DbConnectionManager.closeStatement(stmt);
+            DbConnectionUtil.closeTransaction(conn, abortTransaction);
+            DbConnectionManager.closeConnection(conn);
         }
     }
-    
+
     private void deleteAppIcon(
             Connection conn,
             String appId)
@@ -642,14 +664,22 @@ public class AppManager extends ManagerBase
     }
 
     public void addAppVersion(
-            String appId,
+            String applicationId,
+            String versionName,
+            Integer status, // 1: enable, 0: disable
+            String ipkFileName,
             byte[] ipkFileData)
     throws DemeterException, Throwable
     {
-        App app = this.getApp(appId);
+        App app = this.getApp(applicationId);
         if(null == app)
         {
-            throw new DemeterException("APP DOES NOT EXIST");
+            throw new DemeterException("APPLICATION DOES NOT EXIST");
+        }
+
+        if(XStringUtil.isBlank(versionName))
+        {
+            throw new DemeterException("VERSION NAME CANNOT BE BLANK");
         }
         
         // create temporary folder
@@ -667,12 +697,10 @@ public class AppManager extends ManagerBase
 
             // extract the IPK, and verify its package information
             // finally, a "Packages.gz" file will be left in the temporary folder
-            com.sercomm.openfire.plugin.data.ipk.Meta packageInfo = IpkUtil.validate(tempIPKFilePath);
-            if(XStringUtil.isBlank(packageInfo.Package) ||
-               XStringUtil.isBlank(packageInfo.Version) ||
-               XStringUtil.isBlank(packageInfo.Filename))
+            com.sercomm.openfire.plugin.data.ipk.Meta meta = IpkUtil.validate(tempIPKFilePath);
+            if(XStringUtil.isBlank(meta.Version))
             {
-                throw new DemeterException("REQUIRED PACKAGE INFORMATION IS BLANK");
+                throw new DemeterException("BAD PACKAGE INFORMATION. NO REQUIRED FIELD WITHIN 'control' FILE OF THE PACKAGE: 'Version'");
             }
 
             // a "Packages.gz" file will be generated after IpkUtil.validate() method being executed
@@ -682,20 +710,55 @@ public class AppManager extends ManagerBase
             final long creationTime = System.currentTimeMillis();
 
             // generate version ID
-            int length = ipkFileData.length + Long.BYTES;
-            ByteBuffer buffer = ByteBuffer.allocate(length);
-            buffer.put(ipkFileData);
-            buffer.putLong(creationTime);
-            final String versionId = Algorithm.md5(buffer.array());
+            final String versionId = generateVersionId(
+                app.getId(),
+                app.getModelName(),
+                creationTime);
 
-            final String version = packageInfo.Version;
-            final String filename = packageInfo.Filename;
-            final String releaseNote = XStringUtil.isBlank(packageInfo.Description) ? XStringUtil.BLANK : packageInfo.Description;
-            
-            if(null != this.getAppVersion(appId, version) ||
-               null != this.getAppVersion(versionId))
+            // --> begin filename investigation
+            // 1. if there is no specific IPK filename, use the filename within
+            //    package information by default 
+            if(XStringUtil.isBlank(ipkFileName))
             {
-                throw new DemeterException("APP VERSION ALREADY EXISTS");
+                ipkFileName = meta.Filename;
+            }
+            
+            // 2. if IPK filename is still blank, set the filename same as application's name
+            if(XStringUtil.isBlank(ipkFileName))
+            {
+                ipkFileName = app.getName();
+            }            
+            // --> end filename investigation
+            
+            final String description = XStringUtil.isBlank(meta.Description) ? XStringUtil.BLANK : meta.Description;
+
+            AppVersion appVersion = null;
+            // check if duplicate version name exists
+            try
+            {
+                appVersion = this.getAppVersion(applicationId, versionName);
+            }
+            catch(DemeterException ignored) {}
+            finally
+            {
+                if(null != appVersion)
+                {
+                    throw new DemeterException("APP VERSION ALREADY EXISTS");
+                }
+            }
+
+            // check if duplicate version ID exists
+            try
+            {
+                appVersion = this.getAppVersion(versionId);
+            }
+            catch(DemeterException ignored) {}
+            finally
+            {
+                if(null != appVersion)
+                {
+                    throw new DemeterException("APP VERSION ALREADY EXISTS");
+                }
             }
             
             final String packageFolderPathString = StorageUtil.Path.makePackageFolderPath(
@@ -722,15 +785,16 @@ public class AppManager extends ManagerBase
                 stmt = conn.prepareStatement(SQL_INSERT_APP_VERSION);
                 
                 int idx = 0;
-                // `id`,`appId`,`version`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`
+                // `id`,`appId`,`version`,`status`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`
                 stmt.setString(++idx, versionId);
-                stmt.setString(++idx, appId);
-                stmt.setString(++idx, version);
-                stmt.setString(++idx, filename);
+                stmt.setString(++idx, applicationId);
+                stmt.setString(++idx, versionName);
+                stmt.setInt(++idx, status);
+                stmt.setString(++idx, ipkFileName);
                 stmt.setLong(++idx, creationTime);
                 stmt.setString(++idx, ipkFilePath.toAbsolutePath().toString());
                 stmt.setLong(++idx, ipkFileData.length);
-                stmt.setString(++idx, releaseNote);
+                stmt.setString(++idx, description);
                 stmt.executeUpdate();
                 
                 // database record being inserted successfully
@@ -739,16 +803,30 @@ public class AppManager extends ManagerBase
                 boolean moved = false;
                 try
                 {
-                    // check if the package folder exists
-                    if(false == Files.exists(packageFolderPath))
+                    try
                     {
-                        Files.createDirectories(packageFolderPath);
+                        // check if the package folder exists
+                        if(false == Files.exists(packageFolderPath))
+                        {
+                            Files.createDirectories(packageFolderPath);
+                        }
+                    }
+                    catch(IOException e)
+                    {
+                        throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
                     }
 
-                    // move IPK file
-                    Files.move(tempIPKFilePath, ipkFilePath);
-                    // move package info. file
-                    Files.move(tempPackageInfoFilePath, packageInfoFilePath);
+                    try
+                    {
+                        // move IPK file
+                        Files.move(tempIPKFilePath, ipkFilePath);
+                        // move package info. file
+                        Files.move(tempPackageInfoFilePath, packageInfoFilePath);
+                    }
+                    catch(IOException e)
+                    {
+                        throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
+                    }
                     
                     moved = true;
                 }
@@ -757,10 +835,15 @@ public class AppManager extends ManagerBase
                     // fallback
                     if(false == moved)
                     {
-                        FileUtil.forceDeleteDirectory(packageFolderPath);
+                        // catch surrounded since the folder path might not be created yet
+                        try
+                        {
+                            FileUtils.forceDelete(packageFolderPath.toFile());
+                        }
+                        catch(Throwable ignored) {}
                     }
                 }
-                
+
                 abortTransaction = false;
             }
             finally
@@ -773,7 +856,144 @@ public class AppManager extends ManagerBase
         finally
         {
             // clean temporary files
-            FileUtil.forceDeleteDirectory(tempFolder);
+            FileUtils.forceDelete(tempFolder.toFile());
+        }
+    }
+
+    public void updateAppVersion(
+            String applicationId,
+            String versionId,
+            String versionName,
+            Integer status, // 1: enable, 0: disable
+            String ipkFileName,
+            byte[] ipkFileData)
+    throws DemeterException, Throwable
+    {
+        App app = this.getApp(applicationId);
+        if(null == app)
+        {
+            throw new DemeterException("APPLICATION DOES NOT EXIST");
+        }
+
+        if(XStringUtil.isBlank(versionName))
+        {
+            throw new DemeterException("VERSION NAME CANNOT BE BLANK");
+        }
+
+        if(0 != status && 1 != status)
+        {
+            throw new DemeterException("INVALID 'status' VALUE");
+        }
+
+        AppVersion appVersion = this.getAppVersion(versionId);
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            conn = DbConnectionManager.getConnection();
+            stmt = conn.prepareStatement(SQL_UPDATE_APP_VERSION);
+            
+            // `version`=?,`status`=?,`ipkFileSize`=? 
+            int idx = 0;
+            stmt.setString(++idx, versionName);
+            stmt.setInt(++idx, status);
+            stmt.setLong(++idx, null == ipkFileData ? appVersion.getIPKFileSize() : ipkFileData.length);
+            stmt.setString(++idx, appVersion.getId());
+
+            stmt.executeUpdate();
+        }
+        finally
+        {
+            DbConnectionManager.closeConnection(stmt, conn);
+        }
+
+        // update the IPK file if necessary
+        if(null != ipkFileData)
+        {
+            // create temporary folder
+            Path tempFolder = Files.createTempDirectory(
+                UUID.randomUUID().toString());
+            try
+            {
+                Path tempIPKFilePath = Paths.get(
+                    tempFolder.toAbsolutePath().toString() + File.separator + IpkUtil.PACKAGE_IPK_FILENAME);
+
+                // save bytes array as "data.ipk" file to temporary folder
+                try(FileOutputStream fos = new FileOutputStream(tempIPKFilePath.toFile()))
+                {
+                    fos.write(ipkFileData);
+                }
+
+                // extract the IPK, and verify its package information
+                // finally, a "Packages.gz" file will be left in the temporary folder
+                com.sercomm.openfire.plugin.data.ipk.Meta meta = IpkUtil.validate(tempIPKFilePath);
+
+                // --> begin filename investigation
+                // 1. if there is no specific IPK filename, use the filename within
+                //    package information by default 
+                if(XStringUtil.isBlank(ipkFileName))
+                {
+                    ipkFileName = meta.Filename;
+                }
+                
+                // 2. if IPK filename is still blank, set the filename same as application's name
+                if(XStringUtil.isBlank(ipkFileName))
+                {
+                    ipkFileName = app.getName();
+                }            
+                // --> end filename investigation
+
+                // a "Packages.gz" file will be generated after IpkUtil.validate() method being executed
+                final Path tempPackageInfoFilePath =
+                        Paths.get(tempFolder.toAbsolutePath().toString() + File.separator + IpkUtil.PACKAGE_GZ_FILENAME);
+                
+                final String packageFolderPathString = StorageUtil.Path.makePackageFolderPath(
+                    SystemProperties.getInstance().getStorage().getRootPath(), 
+                    appVersion.getAppId(), 
+                    versionId);
+                
+                final Path packageFolderPath =
+                        Paths.get(packageFolderPathString);
+                final Path ipkFilePath = 
+                        Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_IPK_FILENAME);
+                final Path packageInfoFilePath = 
+                        Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME);
+                
+                try
+                {
+                    // check if the package folder exists
+                    if(Files.exists(packageFolderPath))
+                    {
+                        // force delete the original folder
+                        FileUtils.forceDelete(packageFolderPath.toFile());
+                    }
+
+                    // re-create it
+                    Files.createDirectories(packageFolderPath);
+                }
+                catch(IOException e)
+                {
+                    throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                }
+
+                try
+                {
+                    // move IPK file
+                    Files.move(tempIPKFilePath, ipkFilePath);
+                    // move package info. file
+                    Files.move(tempPackageInfoFilePath, packageInfoFilePath);
+                }
+                catch(IOException e)
+                {
+                    throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
+                }
+            }
+            finally
+            {
+                // clean temporary files
+                FileUtils.forceDelete(tempFolder.toFile());
+            }
         }
     }
 
@@ -797,16 +1017,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, version);
             
             rs = stmt.executeQuery();
-            do
+            if(!rs.next())
             {
-                if(!rs.next())
-                {
-                    break;
-                }
-                
-                object = AppVersion.from(rs);
+                throw new DemeterException("APP VERSION WAS NOT FOUND");
             }
-            while(false);
+            object = AppVersion.from(rs);
         }
         finally
         {
@@ -816,7 +1031,8 @@ public class AppManager extends ManagerBase
         return object;
     }
     
-    public AppVersion getAppVersion(String versionId)
+    public AppVersion getAppVersion(
+            String versionId)
     throws DemeterException, Throwable
     {
         AppVersion object = null;
@@ -833,16 +1049,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, versionId);
             
             rs = stmt.executeQuery();
-            do
+            if(!rs.next())
             {
-                if(!rs.next())
-                {
-                    break;
-                }
-                
-                object = AppVersion.from(rs);
+                throw new DemeterException("APP VERSION WAS NOT FOUND");
             }
-            while(false);
+            object = AppVersion.from(rs);
         }
         finally
         {
@@ -870,16 +1081,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, appId);
             
             rs = stmt.executeQuery();
-            do
+            if(!rs.next())
             {
-                if(!rs.next())
-                {
-                    break;
-                }
-                
-                object = AppVersion.from(rs);
+                throw new DemeterException("NO APP VERSION AVAILABLE");
             }
-            while(false);
+            object = AppVersion.from(rs);
         }
         finally
         {
@@ -956,16 +1162,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, iconId);
             
             rs = stmt.executeQuery();
-            do
+            if(!rs.next())
             {
-                if(!rs.next())
-                {
-                    break;
-                }
-                
-                object = AppIcon.from(rs);
+                throw new DemeterException("APP ICON WAS NOT FOUND");
             }
-            while(false);
+            object = AppIcon.from(rs);
         }
         finally
         {
@@ -993,16 +1194,11 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, appId);
             
             rs = stmt.executeQuery();
-            do
+            if(!rs.next())
             {
-                if(!rs.next())
-                {
-                    break;
-                }
-                
-                object = AppIcon.from(rs);
+                throw new DemeterException("APP ICON WAS NOT FOUND");
             }
-            while(false);
+            object = AppIcon.from(rs);
         }
         finally
         {
@@ -1203,5 +1399,23 @@ public class AppManager extends ManagerBase
         {
             DbConnectionManager.closeConnection(stmt, conn);
         }                
+    }
+    
+    private String generateVersionId(
+            String applicationId,
+            String modelName,
+            Long creationTime)
+    {
+        byte[] applicationIdData = applicationId.getBytes(StandardCharsets.UTF_8);
+        byte[] modelNameData = modelName.getBytes(StandardCharsets.UTF_8);
+
+        int length = applicationIdData.length + modelNameData.length + Long.BYTES;
+
+        ByteBuffer buffer = ByteBuffer.allocate(length);
+        buffer.put(applicationIdData);
+        buffer.put(modelNameData);
+        buffer.putLong(creationTime);
+
+        return  Algorithm.md5(buffer.array());        
     }
 }

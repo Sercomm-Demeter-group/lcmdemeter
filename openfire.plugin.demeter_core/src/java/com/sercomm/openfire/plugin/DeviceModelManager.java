@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 
@@ -14,6 +15,7 @@ import org.jivesoftware.util.cache.CacheFactory;
 import com.sercomm.common.util.ManagerBase;
 import com.sercomm.commons.util.DateTime;
 import com.sercomm.openfire.plugin.cache.DeviceModelCache;
+import com.sercomm.openfire.plugin.data.frontend.App;
 import com.sercomm.openfire.plugin.exception.DemeterException;
 
 public class DeviceModelManager extends ManagerBase 
@@ -231,8 +233,14 @@ public class DeviceModelManager extends ManagerBase
     }
     
     public DeviceModelCache deleteDeviceModel(String modelName)
-    throws DemeterException
+    throws DemeterException, Throwable
     {
+        List<App> apps = AppManager.getInstance().getAppsByModel(modelName);
+        if(!apps.isEmpty())
+        {
+            throw new DemeterException("REQUIRED BY APPLICATION: " + apps.get(0).getId());
+        }
+
         DeviceModelCache deviceModelCache = null;
 
         Lock locker = getLock(modelName);

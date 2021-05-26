@@ -8,6 +8,7 @@ public class AppVersion
     private String id;
     private String appId;
     private String version;
+    private Integer status;
     private String filename;
     private Long installedCount;
     private Long removedCount;
@@ -28,6 +29,7 @@ public class AppVersion
         object.id = rs.getString("id");
         object.appId = rs.getString("appId");
         object.version = rs.getString("version");
+        object.status = rs.getInt("status");
         object.filename = rs.getString("filename");
         object.installedCount = rs.getLong("installedCount");
         object.removedCount = rs.getLong("removedCount");
@@ -67,6 +69,16 @@ public class AppVersion
     public void setVersion(String version)
     {
         this.version = version;
+    }
+
+    public Integer getStatus()
+    {
+        return this.status;
+    }
+    
+    public void setStatus(Integer status)
+    {
+        this.status = status;
     }
 
     public String getFilename()

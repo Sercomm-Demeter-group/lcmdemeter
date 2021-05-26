@@ -32,9 +32,32 @@ public class IpkUtil
         String tempFolderPathString = tempFolderPath.toAbsolutePath().toString();
         final String tempTarFilePathString = tempFolderPath + File.separator + tempIPKFilePath.getFileName() + ".tar";
         
-        CompressUtil.gzipDecompression(
-            tempIPKFilePathString, 
-            tempTarFilePathString);
+        // check if the IPK file was packed by ZIP or GZIP
+        // if both ZIP and GZIP cannot extract the IPK file
+        // then throwing an error
+        try
+        {
+            // try ZIP format at first
+            CompressUtil.zipDecompression(
+                tempIPKFilePathString, 
+                tempTarFilePathString);
+        }
+        catch(IOException ignored)
+        {
+            // try GZIP format instead
+            try
+            {
+                CompressUtil.gzipDecompression(
+                    tempIPKFilePathString, 
+                    tempTarFilePathString);                
+            }
+            catch(IOException e)
+            {
+                // interrupt and throw the exception
+                throw e;
+            }
+        }
+
         CompressUtil.tarDecompression(
             tempTarFilePathString, 
             tempFolderPathString);
@@ -64,7 +87,7 @@ public class IpkUtil
         {
             throw new IOException("'control' FILE DOES NOT EXIST");
         }
-        
+
         // read contents of control file
         String controlDataString = XStringUtil.BLANK;
         try(FileInputStream fis = new FileInputStream(
@@ -78,28 +101,44 @@ public class IpkUtil
 
         if(XStringUtil.isBlank(controlDataString))
         {
-            throw new IOException("PACKAGE INFORMATION IS BLANK");
+            throw new IOException("PACKAGE CONTROL FILE IS BLANK");
         }
-        
+
+        // format of control file
         /*
-        Package: Plume
-        Version: 4
-        Filename: Plume_4_arm.ipk
-        Section: utils
-        Architecture: arm
-        Installed-Size: 678650
+         *   Package: Plume\n
+         *   Version: 4\n
+         *   Filename: Plume_4_arm.ipk\n
+         *   Section: utils\n
+         *   Architecture: arm\n
+         *   Installed-Size: 678650\n
+         *   Description: ...\n
+         *   \n
+         */
+        // or
+        /*
+         *   Package: web_hello\n
+         *   Version: 1\n
+         *   Filename: \n
+         *   Section: utils\n
+         *   Architecture: mips\n
+         *   Installed-Size: 16818\n
+         *    web test\n
+         *   \n
          */
         Map<String, String> mapper = new HashMap<String, String>();
         String[] lines = controlDataString.split("\n");
         for(String line : lines)
         {
-            String[] pair = line.split(":");
-            if(pair.length != 2)
+            String[] tokens = line.split(":");
+            if(tokens.length == 2)
             {
-                continue;
+                mapper.put(tokens[0].trim().replaceAll("-", XStringUtil.BLANK), tokens[1].trim());
             }
-            
-            mapper.put(pair[0].trim().replaceAll("-", XStringUtil.BLANK), pair[1].trim());
+            else
+            {
+                mapper.put("Description", tokens[0].trim());
+            }
         }
         
         object = new com.sercomm.openfire.plugin.data.ipk.Meta();
@@ -120,100 +159,4 @@ public class IpkUtil
         
         return object;
     }
-
-    /*
-    public static com.sercomm.openfire.plugin.model.ipk.Meta validate(Path ipkFilePath)
-    throws IOException
-    {
-        com.sercomm.openfire.plugin.model.ipk.Meta object = null;
-        
-        if(!Files.exists(ipkFilePath))
-        {
-            throw new IOException("FILE DOES NOT EXIST: " + ipkFilePath);
-        }
-        
-        // create temporary folder
-        Path tempFolder = Files.createTempDirectory(UUID.randomUUID().toString());
-        try
-        {
-            String tempFilename = UUID.randomUUID().toString();
-            String tempFolderPath = tempFolder.toAbsolutePath().toString();
-            String tempFilePath = tempFolderPath + File.separator + tempFilename;
-
-            // copy from source file
-            Files.copy(ipkFilePath, Paths.get(tempFilePath));
-            
-            final String tempTarFilePath = tempFolderPath + File.separator + tempFilename + ".tar";
-            CompressUtil.gzipDecompression(
-                tempFilePath, 
-                tempTarFilePath);
-            
-            CompressUtil.tarDecompression(
-                tempTarFilePath, 
-                tempFolderPath);
-            
-            // control.tar.gz
-            Path controlTarGzFile = Paths.get(tempFolderPath + File.separator + META_FILENAME + ".tar.gz");
-            Path controlTarFile = Paths.get(tempFolderPath + File.separator + META_FILENAME + ".tar");
-            Path controlFile = Paths.get(tempFolderPath + File.separator + META_FILENAME);
-            if(!Files.exists(controlTarGzFile))
-            {
-                throw new IOException("CONTROL FILE DOES NOT EXIST");
-            }
-            
-            CompressUtil.gzipDecompression(
-                controlTarGzFile.toAbsolutePath().toString(), 
-                controlTarFile.toAbsolutePath().toString());
-            CompressUtil.tarDecompression(
-                controlTarFile.toAbsolutePath().toString(), 
-                tempFolderPath);
-            
-            if(!Files.exists(controlFile))
-            {
-                throw new IOException("CONTROL FILE DOES NOT EXIST");
-            }
-            
-            // read file contents
-            byte[] metaData = null;
-            File file = controlFile.toAbsolutePath().toFile();
-            try(FileInputStream fis = new FileInputStream(file))
-            {
-                byte[] data = new byte[(int) file.length()];
-                fis.read(data);
-                
-                metaData = data;
-            }
-
-            String metaDataString = new String(metaData);
-            
-            Map<String, String> mapper = new HashMap<String, String>();
-            String[] lines = metaDataString.split("\n");
-            for(String line : lines)
-            {
-                String[] pair = line.split(":");
-                if(pair.length != 2)
-                {
-                    continue;
-                }
-                
-                mapper.put(pair[0].trim().replaceAll("-", XStringUtil.BLANK), pair[1].trim());
-            }
-            
-            object = new com.sercomm.openfire.plugin.model.ipk.Meta();
-            
-            object.Package = mapper.get("Package");
-            object.Version = mapper.get("Version");
-            object.Filename = mapper.get("Filename");
-            object.Section = mapper.get("Section");
-            object.Architecture = mapper.get("Architecture");
-            object.InstalledSize = mapper.get("InstalledSize");
-        }
-        finally
-        {
-            FileUtil.forceDeleteDirectory(tempFolder);
-        }        
-        
-        return object;
-    }
-    */
 }

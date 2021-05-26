@@ -2,8 +2,6 @@ package com.sercomm.openfire.plugin.data.ipk;
 
 public class Meta
 {
-    public String plainText;
-    
     public String Package;
     public String Version;
     public String Filename;

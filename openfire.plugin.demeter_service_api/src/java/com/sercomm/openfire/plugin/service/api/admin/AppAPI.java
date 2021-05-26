@@ -553,7 +553,12 @@ public class AppAPI extends ServiceAPIBase
         String errorMessage = XStringUtil.BLANK;        
         try
         {
-            AppManager.getInstance().addAppVersion(appId, requestPayload);
+            AppManager.getInstance().addAppVersion(
+                appId,
+                null,
+                1,
+                XStringUtil.BLANK,
+                requestPayload);
             
             response = Response.status(Status.CREATED).build();
         }

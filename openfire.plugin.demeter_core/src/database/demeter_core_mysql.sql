@@ -147,4 +147,32 @@ CREATE TABLE IF NOT EXISTS `sSystemRecord` (
   KEY `UNIX_TIME` (`unixTime`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='system record';
 
-INSERT INTO `ofVersion`(name,version) VALUES('demeter_core',0);
+-- version 1
+ALTER TABLE `sAppVersion` CHANGE `version` `version` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'version';
+
+-- version 2
+ALTER TABLE `sEndUser` ADD `uuid` VARCHAR(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'uuid' AFTER `id`;
+UPDATE `sEndUser` SET `uuid`=UUID();
+ALTER TABLE `sEndUser` ADD UNIQUE `UUID` ( `uuid`);
+
+-- version 3
+CREATE TABLE `sDeviceModel` (
+  `uuid` varchar(36) COLLATE utf8_bin NOT NULL COMMENT 'uuid',
+  `modelName` varchar(32) COLLATE utf8_bin NOT NULL COMMENT 'device model name',
+  `status` tinyint(4) NOT NULL COMMENT '0: disabled, 1: enabled',
+  `creationTime` bigint(20) UNSIGNED NOT NULL COMMENT 'creation time',
+  `updatedTime` bigint(20) UNSIGNED NOT NULL COMMENT 'updated time',
+  `script` mediumtext COLLATE utf8_bin NOT NULL COMMENT 'operation interfaces implementation'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='device model info.';
+
+ALTER TABLE `sDeviceModel`
+  ADD PRIMARY KEY (`uuid`),
+  ADD UNIQUE KEY `MODEL_NAME` (`modelName`),
+  ADD KEY `STATUS` (`status`),
+  ADD KEY `CREATION_TIME` (`creationTime`),
+  ADD KEY `UPDATED_TIME` (`updatedTime`);
+
+-- version 4
+ALTER TABLE `sAppVersion` ADD `status` TINYINT UNSIGNED NOT NULL DEFAULT '1' COMMENT '0:disable, 1:enable' AFTER `version`, ADD INDEX `STATUS` (`status`);
+
+INSERT INTO `ofVersion`(name,version) VALUES('demeter_core',4);

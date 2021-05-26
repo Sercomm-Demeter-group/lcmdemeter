@@ -10,6 +10,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -25,15 +26,17 @@ import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.Meta;
 import com.sercomm.commons.util.DateTime;
 import com.sercomm.commons.util.XStringUtil;
+import com.sercomm.openfire.plugin.AppManager;
 import com.sercomm.openfire.plugin.define.EndUserRole;
+import com.sercomm.openfire.plugin.exception.DemeterException;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 
-@Path(UsersAPI.URI_PATH)
-@RequireRoles({EndUserRole.ADMIN})
-public class UsersAPI extends ServiceAPIBase
+@Path(AppVersionsAPI.URI_PATH)
+@RequireRoles({EndUserRole.ADMIN, EndUserRole.EDITOR})
+public class AppVersionsAPI extends ServiceAPIBase
 {
-    private static final Logger log = LoggerFactory.getLogger(UsersAPI.class);
+    private static final Logger log = LoggerFactory.getLogger(AppVersionsAPI.class);
 
     protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v2/";
 
@@ -41,9 +44,10 @@ public class UsersAPI extends ServiceAPIBase
     private HttpServletRequest request;
 
     @GET
-    @Path("users")
+    @Path("application/{applicationId}/versions")
     @Produces({MediaType.APPLICATION_JSON})
     public Response get(
+            @PathParam("applicationId") String applicationId,
             @QueryParam("from") Integer from,
             @QueryParam("size") Integer size,
             @QueryParam("filter") List<String> filters)
@@ -51,21 +55,41 @@ public class UsersAPI extends ServiceAPIBase
     {
         Response response = null;
         Response.Status status = Status.OK;
-        
+
         final String userId = (String) request.getAttribute("userId");
         final String sessionId = (String) request.getAttribute("sessionId");
 
         String errorMessage = XStringUtil.BLANK;
         try
         {
-            List<Object> arguments = new ArrayList<>();
+            // check if the application ID is valid
+            try
+            {
+                AppManager.getInstance().getApp(applicationId);
+            }
+            catch(DemeterException e)
+            {
+                status = Response.Status.FORBIDDEN;
+                errorMessage = e.getMessage();
 
+                throw new UMEiException(
+                    errorMessage,
+                    status);
+            }
+
+            List<Object> arguments = new ArrayList<>();
+            
             int totalCount = 0;
             // query total rows count
             StringBuilder builder = new StringBuilder();
-            builder.append("SELECT COUNT(*) AS `count` FROM `sEndUser` WHERE ");
+            builder.append("SELECT COUNT(*) AS `count` FROM `sAppVersion` WHERE `appId` = ? ");
+            arguments.add(applicationId);
 
-            boolean filterRole = false;
+            if(!filters.isEmpty())
+            {
+                builder.append("AND ");
+            }
+
             Iterator<String> iterator = filters.iterator();
             while(iterator.hasNext())
             {
@@ -82,13 +106,24 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`id` LIKE ? ");
+                        builder.append("`name` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
-                    case "role":
-                        filterRole = true;
-                        builder.append("`role` LIKE ? ");
-                        arguments.add(tokens[1] + "%");
+                    case "status":
+                        builder.append("`status` = ? ");
+                        switch(tokens[1])
+                        {
+                            case "enable":
+                                arguments.add(1);
+                                break;
+                            case "disable":
+                                arguments.add(0);
+                                break;
+                            default:
+                                throw new UMEiException(
+                                    "INVALID FILTER ATTRIBUTE VALUE: " + tokens[1],
+                                    Response.Status.BAD_REQUEST);
+                        }
                         break;
                     default:
                         throw new UMEiException(
@@ -100,16 +135,6 @@ public class UsersAPI extends ServiceAPIBase
                 {
                     builder.append("AND ");
                 }
-            }
-
-            if(!filterRole)
-            {
-               if(!filters.isEmpty())
-               {
-                   builder.append("AND ");
-               }
-
-               builder.append("`role` IN ('admin','editor','operator') ");
             }
 
             Connection conn = null;
@@ -128,18 +153,24 @@ public class UsersAPI extends ServiceAPIBase
                 rs = stmt.executeQuery();
                 rs.next();
 
-                totalCount = rs.getInt("count");
+                totalCount = rs.getInt("count");                
             }
             finally
             {
                 DbConnectionManager.closeConnection(rs, stmt, conn);
             }
-
+            
             // query rows
             builder = new StringBuilder();
             arguments.clear();
 
-            builder.append("SELECT * FROM `sEndUser` WHERE ");
+            builder.append("SELECT * FROM `sAppVersion` WHERE `appId` = ? ");
+            arguments.add(applicationId);
+
+            if(!filters.isEmpty())
+            {
+                builder.append("AND ");
+            }
 
             iterator = filters.iterator();
             while(iterator.hasNext())
@@ -150,18 +181,21 @@ public class UsersAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`id` LIKE ? ");
+                        builder.append("`name` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
-                    case "role":
-                        filterRole = true;
-                        builder.append("`role` LIKE ? ");
-                        arguments.add(tokens[1] + "%");
+                    case "status":
+                        builder.append("`status` = ? ");
+                        switch(tokens[1])
+                        {
+                            case "enable":
+                                arguments.add(1);
+                                break;
+                            case "disable":
+                                arguments.add(0);
+                                break;
+                        }
                         break;
-                    default:
-                        throw new UMEiException(
-                            "INVALID FILTER ATTRIBUTE: " + tokens[0],
-                            Response.Status.BAD_REQUEST);
                 }
 
                 if(iterator.hasNext())
@@ -170,15 +204,7 @@ public class UsersAPI extends ServiceAPIBase
                 }
             }
 
-            if(!filterRole)
-            {
-               if(!filters.isEmpty())
-               {
-                   builder.append("AND ");
-               }
-               
-               builder.append("`role` IN ('admin','editor','operator') ");
-            }
+            builder.append("ORDER BY `creationTime` DESC ");
 
             if(null != from && null != size)
             {
@@ -187,8 +213,8 @@ public class UsersAPI extends ServiceAPIBase
                 .append(",")
                 .append(Integer.toString(size));
             }
-
-            List<GetUserResult> result = null;
+            
+            List<GetAppVersionResult> result = null;
             try
             {
                 conn = DbConnectionManager.getConnection();
@@ -204,10 +230,10 @@ public class UsersAPI extends ServiceAPIBase
                 
                 while(rs.next())
                 {
-                    GetUserResult object = new GetUserResult();
-                    object.setUserId(rs.getString("uuid"));
-                    object.setName(rs.getString("id"));
-                    object.setRole(rs.getString("role"));
+                    GetAppVersionResult object = new GetAppVersionResult();
+                    object.setVersionId(rs.getString("id"));
+                    object.setName(rs.getString("version"));
+                    object.setStatus(rs.getInt("status") == 1 ? "enable" : "disable");
                     object.setCreationTime(DateTime.from(rs.getLong("creationTime")).toString(DateTime.FORMAT_ISO_MS));
 
                     result.add(object);
@@ -217,7 +243,7 @@ public class UsersAPI extends ServiceAPIBase
             {
                 DbConnectionManager.closeConnection(rs, stmt, conn);
             }
-
+            
             // response
             BodyPayload bodyPayload = new BodyPayload()
                     .withMeta(new Meta()
@@ -230,7 +256,7 @@ public class UsersAPI extends ServiceAPIBase
                 .status(status)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(bodyPayload.toString())
-                .build();            
+                .build();
         }
         catch(UMEiException e)
         {
@@ -245,9 +271,10 @@ public class UsersAPI extends ServiceAPIBase
             throw new InternalErrorException(t.getMessage());
         }
 
-        log.info("({},{},{},{},{}); {}",
+        log.info("({},{},{},{},{},{}); {}",
             userId,
             sessionId,
+            applicationId,
             from,
             size,
             filters,
@@ -256,20 +283,20 @@ public class UsersAPI extends ServiceAPIBase
         return response;
     }
     
-    public static class GetUserResult
+    public static class GetAppVersionResult
     {
-        private String userId;
+        private String versionId;
         private String name;
-        private String role;
+        private String status;
         private String creationTime;
 
-        public String getUserId()
+        public String getVersionId()
         {
-            return userId;
+            return versionId;
         }
-        public void setUserId(String userId)
+        public void setVersionId(String versionId)
         {
-            this.userId = userId;
+            this.versionId = versionId;
         }
         public String getName()
         {
@@ -279,13 +306,13 @@ public class UsersAPI extends ServiceAPIBase
         {
             this.name = name;
         }
-        public String getRole()
+        public String getStatus()
         {
-            return role;
+            return status;
         }
-        public void setRole(String role)
+        public void setStatus(String status)
         {
-            this.role = role;
+            this.status = status;
         }
         public String getCreationTime()
         {

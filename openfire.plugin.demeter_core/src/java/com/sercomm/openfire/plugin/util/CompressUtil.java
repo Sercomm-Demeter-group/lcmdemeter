@@ -23,15 +23,6 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 public class CompressUtil
 {
-    /**
-     * tar打包压缩
-     *
-     * @param filesPathArray
-     *            要压缩的文件的全路径(数组)
-     * @param resultFilePath
-     *            压缩后的文件全文件名(.tar)
-     * @throws Exception
-     */
     public static boolean tarCompression(
             String[] filesPathArray, 
             String resultFilePath) 
@@ -48,8 +39,6 @@ public class CompressUtil
                 try {
                     File file = new File(filePath);
                     TarArchiveEntry tae = new TarArchiveEntry(file);
-                    // 此处指明 每一个被压缩文件的名字,以便于解压时TarArchiveEntry的getName()方法获取到的直接就是这里指定的文件名
-                    // 以(左边的)GBK编码将file.getName()“打碎”为序列,再“组装”序列为(右边的)GBK编码的字符串
                     tae.setName(new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
                     taos.putArchiveEntry(tae);
                     fis = new FileInputStream(file);
@@ -77,15 +66,6 @@ public class CompressUtil
         return true;
     }
  
-    /**
-     * tar拆包解压
-     *
-     * @param decompressFilePath
-     *            要被解压的压缩文件 全路径
-     * @param resultDirPath
-     *            解压文件存放绝对路径(目录)
-     * @throws Exception
-     */
     public static boolean tarDecompression(
             String decompressFilePath, 
             String resultDirPath) 
@@ -140,15 +120,6 @@ public class CompressUtil
         return true;
     }
  
-    /**
-     * 对.tar文件进行gzip压缩
-     *
-     * @param filePath
-     *            要被压缩的压缩文件 全路径
-     * @param resultFilePath
-     *            压缩后的文件(全文件名 .gz)
-     * @throws IOException
-     */
     public static boolean gzipCompression(
             String filePath, 
             String resultFilePath) 
@@ -185,17 +156,6 @@ public class CompressUtil
         return true;
     }
  
-    /**
-     * 解压对.tar.gz文件至 .tar文件
-     * 
-     * @param <GzipArchiveEntry>
-     *
-     * @param compressedFilePath
-     *            要被解压的压缩文件 全路径
-     * @param resultDirPath
-     *            解压文件存放绝对路径(目录)
-     * @throws IOException
-     */
     public static boolean gzipDecompression(
             String compressedFilePath, 
             String resultDirPath) 
@@ -228,16 +188,6 @@ public class CompressUtil
         return true;
     }
     
-    
-    /**
-     * zip压缩(注:与tar类似)
-     *
-     * @param filesPathArray
-     *            要压缩的文件的全路径(数组)
-     * @param resultFilePath
-     *            压缩后的文件全文件名(.tar)
-     * @throws Exception
-     */
     public static boolean zipCompression(
             String[] filesPathArray, 
             String resultFilePath) 
@@ -253,8 +203,6 @@ public class CompressUtil
                 BufferedInputStream bis = null;
                 try {
                     File file = new File(filePath);
-                    // 第二个参数如果是文件全路径名,那么压缩时也会将路径文件夹也缩进去;
-                    // 我们之压缩目标文件,而不压缩该文件所处位置的相关文件夹,所以这里我们用file.getName()
                     ZipArchiveEntry zae = new ZipArchiveEntry(file, file.getName());
                     zaos.putArchiveEntry(zae);
                     fis = new FileInputStream(file);
@@ -282,15 +230,6 @@ public class CompressUtil
         return true;
     }
  
-    /**
-     * zip解压(注:与tar类似)
-     *
-     * @param decompressFilePath
-     *            要被解压的压缩文件 全路径
-     * @param resultDirPath
-     *            解压文件存放绝对路径(目录)
-     * @throws Exception
-     */
     public static boolean zipDecompression(
             String decompressFilePath, 
             String resultDirPath) 

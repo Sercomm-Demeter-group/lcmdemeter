@@ -190,7 +190,7 @@ public class DeviceModelsAPI extends ServiceAPIBase
             // response
             BodyPayload bodyPayload = new BodyPayload()
                     .withMeta(new Meta()
-                        .withFrom(from)
+                        .withFrom(from == null ? 0 : from)
                         .withSize(result.size())
                         .withTotal(totalCount))
                     .withData(result);

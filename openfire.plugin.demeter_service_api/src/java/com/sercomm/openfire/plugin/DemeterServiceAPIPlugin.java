@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.jivesoftware.openfire.container.Plugin;
@@ -39,6 +40,9 @@ public class DemeterServiceAPIPlugin implements Plugin
             
             // Jersey 2.22.2
             ResourceConfig resourceConfig = new ResourceConfig();
+            // register multi-part feature 
+            resourceConfig.register(org.glassfish.jersey.media.multipart.MultiPartFeature.class);
+
             // register API.v1 (services)
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.AuthAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.IdentityAPI.class);
@@ -47,11 +51,13 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.FileAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.UsageAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v1.EventAPI.class);
+
             // register API.v1 (administrator services)
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.AppAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.CatalogAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.DeviceAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.admin.CustomerAPI.class);
+
             // register API.v2
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.UMEiException.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.InternalErrorException.class);
@@ -63,6 +69,9 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.DevicesAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppsAPI.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppVersionAPI.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppVersionsAPI.class);
+
             // register filters
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.AuthFilter.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v2.AuthFilter.class);

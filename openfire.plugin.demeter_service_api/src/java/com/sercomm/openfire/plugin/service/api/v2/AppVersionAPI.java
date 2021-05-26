@@ -1,6 +1,10 @@
 package com.sercomm.openfire.plugin.service.api.v2;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -12,51 +16,74 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.util.Json;
 import com.sercomm.commons.util.XStringUtil;
-import com.sercomm.openfire.plugin.DeviceModelManager;
-import com.sercomm.openfire.plugin.cache.DeviceModelCache;
+import com.sercomm.openfire.plugin.AppManager;
+import com.sercomm.openfire.plugin.data.frontend.AppVersion;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.exception.DemeterException;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 
-@Path(DeviceModelAPI.URI_PATH)
+@Path(AppVersionAPI.URI_PATH)
 @RequireRoles({EndUserRole.ADMIN, EndUserRole.EDITOR})
-public class DeviceModelAPI extends ServiceAPIBase
+public class AppVersionAPI extends ServiceAPIBase
 {
-    private static final Logger log = LoggerFactory.getLogger(DeviceModelAPI.class);
+    private static final Logger log = LoggerFactory.getLogger(AppVersionAPI.class);
 
     protected static final String URI_PATH = ServiceAPIBase.URI_PATH + "v2/";
 
-    @Context 
+    @Context
     private HttpServletRequest request;
 
     @POST
-    @Path("model")
+    @Path("application/{applicationId}/version")
+    @Consumes({MediaType.MULTIPART_FORM_DATA})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response post(String requestPayload)
+    public Response post(
+            @PathParam("applicationId") String applicationId,
+            @FormDataParam("payload") String requestPayload,
+            @FormDataParam("file") InputStream fileInputStream,
+            @FormDataParam("file") FormDataContentDisposition fdcd)
     throws UMEiException, InternalErrorException
     {
         Response response = null;
         Response.Status status = Status.OK;
-        
+
         final String userId = (String) request.getAttribute("userId");
         final String sessionId = (String) request.getAttribute("sessionId");
 
-        String modelName;
-
+        String name;
+        Integer size = 0;
+        
         String errorMessage = XStringUtil.BLANK;
         try
         {
+            // check if the application ID is valid
+            try
+            {
+                AppManager.getInstance().getApp(applicationId);
+            }
+            catch(DemeterException e)
+            {
+                status = Response.Status.FORBIDDEN;
+                errorMessage = e.getMessage();
+
+                throw new UMEiException(
+                    errorMessage,
+                    status);
+            }
+
             if(XStringUtil.isBlank(requestPayload))
             {
                 status = Response.Status.BAD_REQUEST;
-                errorMessage = "REQUEST PAYLOAD WAS BLANK";
+                errorMessage = "MANDATORY FORM DATA MISSING";
 
                 throw new UMEiException(
                     errorMessage,
@@ -69,10 +96,10 @@ public class DeviceModelAPI extends ServiceAPIBase
                     requestPayload,
                     BodyPayload.class);
 
-                PostDeviceModelRequest request = bodyPayload.getDesire(
-                    PostDeviceModelRequest.class);
-
-                modelName = request.getName();
+                PostAppVersionRequest request = bodyPayload.getDesire(
+                    PostAppVersionRequest.class);
+                
+                name = request.getName();
             }
             catch(Throwable ignored)
             {
@@ -84,7 +111,7 @@ public class DeviceModelAPI extends ServiceAPIBase
                     status);
             }
 
-            if(XStringUtil.isBlank(modelName))
+            if(XStringUtil.isBlank(name))
             {
                 status = Response.Status.BAD_REQUEST;
                 errorMessage = "MANDATORY PARAMETER(S) CANNOT BE BLANK";
@@ -94,12 +121,44 @@ public class DeviceModelAPI extends ServiceAPIBase
                     status);
             }
 
-            DeviceModelCache deviceModelCache = 
-                    DeviceModelManager.getInstance().createDeviceModel(modelName, XStringUtil.BLANK);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int length = 0;
+            byte[] buffer = new byte[1024];
+            while ((length = fileInputStream.read(buffer, 0, buffer.length)) != -1)
+            {
+                baos.write(buffer, 0, length);
+            }
+            baos.flush();
 
-            PostDeviceModelResult result = new PostDeviceModelResult();
-            result.setModelId(deviceModelCache.getId());
+            // obtain the file data
+            byte[] bufferArray = baos.toByteArray();
+            // obtain the file size
+            size = bufferArray.length;
 
+            PostAppVersionResult result = null;
+            try
+            {
+                AppManager.getInstance().addAppVersion(
+                    applicationId,
+                    name,
+                    1,
+                    fdcd.getFileName(),
+                    bufferArray);
+                
+                AppVersion appVersion = AppManager.getInstance().getAppVersion(
+                    applicationId,
+                    name);
+
+                result = new PostAppVersionResult();
+                result.setVersionId(appVersion.getId());
+            }
+            catch(DemeterException e)
+            {
+                throw new UMEiException(
+                    e.getMessage(),
+                    Response.Status.FORBIDDEN);
+            }
+            
             // response
             BodyPayload bodyPayload = new BodyPayload()
                     .withMeta(null)
@@ -124,21 +183,25 @@ public class DeviceModelAPI extends ServiceAPIBase
             throw new InternalErrorException(t.getMessage());
         }
 
-        log.info("({},{},{}); {}",
+        log.info("({},{},{},{}); {}",
             userId,
             sessionId,
-            modelName,
+            name,
+            size,
             XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
 
         return response;
     }
-    
+
     @PUT
-    @Path("model/{targetId}")
+    @Path("application/{applicationId}/version/{versionId}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response put(
-            @PathParam("targetId") String targetId,
-            String requestPayload)
+            @PathParam("applicationId") String applicationId,
+            @PathParam("versionId") String versionId,
+            @FormDataParam("payload") String requestPayload,
+            @FormDataParam("file") InputStream fileInputStream,
+            @FormDataParam("file") FormDataContentDisposition fdcd)
     throws UMEiException, InternalErrorException
     {
         Response response = null;
@@ -147,78 +210,91 @@ public class DeviceModelAPI extends ServiceAPIBase
         final String userId = (String) request.getAttribute("userId");
         final String sessionId = (String) request.getAttribute("sessionId");
 
-        String reqStatusString;
+        String name = XStringUtil.BLANK;
+        String statusString = XStringUtil.BLANK;
+        Integer size = 0;
 
         String errorMessage = XStringUtil.BLANK;
         try
         {
-            if(XStringUtil.isBlank(requestPayload))
+            // check if the application ID is valid
+            try
             {
-                status = Response.Status.BAD_REQUEST;
-                errorMessage = "REQUEST PAYLOAD WAS BLANK";
+                AppManager.getInstance().getApp(applicationId);
+            }
+            catch(DemeterException e)
+            {
+                status = Response.Status.FORBIDDEN;
+                errorMessage = e.getMessage();
 
                 throw new UMEiException(
                     errorMessage,
                     status);
             }
 
-            try
+            Integer statusValue = 0;
+            if(!XStringUtil.isBlank(requestPayload))
             {
                 BodyPayload bodyPayload = Json.mapper().readValue(
                     requestPayload,
                     BodyPayload.class);
 
-                PutDeviceModelRequest request = bodyPayload.getDesire(
-                    PutDeviceModelRequest.class);
+                PutAppVersionRequest request = bodyPayload.getDesire(
+                    PutAppVersionRequest.class);
                 
-                reqStatusString = request.getStatus();
+                name = request.getName();
+                statusString = request.getStatus();
+                
+                switch(statusString)
+                {
+                    case "enable":
+                        statusValue = 1;
+                        break;
+                    case "disable":
+                        statusValue = 0;
+                        break;
+                    default:
+                        throw new UMEiException(
+                            "INVALID 'status' value",
+                            Response.Status.BAD_REQUEST);
+                }
             }
-            catch(Throwable ignored)
-            {
-                status = Response.Status.BAD_REQUEST;
-                errorMessage = "INALID REQUEST PAYLOAD: " + requestPayload;
 
-                throw new UMEiException(
-                    errorMessage,
-                    status);
-            }
-            
-            int reqStatus;
-            switch(reqStatusString)
+            byte[] bufferArray = null;
+            if(null != fileInputStream)
             {
-                case "enable":
-                    reqStatus = 1;
-                    break;
-                case "disable":
-                    reqStatus = 0;
-                    break;
-                default:
-                    status = Response.Status.BAD_REQUEST;
-                    errorMessage = "INALID 'status' PARAMETER: " + requestPayload;
-                    throw new UMEiException(
-                        errorMessage,
-                        status);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                int length = 0;
+                byte[] buffer = new byte[1024];
+                while ((length = fileInputStream.read(buffer, 0, buffer.length)) != -1)
+                {
+                    baos.write(buffer, 0, length);
+                }
+                baos.flush();
+
+                // obtain the file data
+                bufferArray = baos.toByteArray();
+                // obtain the file size
+                size = bufferArray.length;
             }
-            
-            DeviceModelCache deviceModelCache;
+
             try
             {
-                deviceModelCache = DeviceModelManager.getInstance().getDeviceModelById(targetId);
-                
-                DeviceModelManager.getInstance().updateDeviceModel(
-                    deviceModelCache.getModelName(),
-                    reqStatus,
-                    deviceModelCache.getScript());
+                AppManager.getInstance().updateAppVersion(
+                    applicationId,
+                    versionId,
+                    name,
+                    statusValue,
+                    null != fdcd ? fdcd.getFileName() : XStringUtil.BLANK,
+                    bufferArray);
             }
             catch(DemeterException e)
             {
-                status = Status.FORBIDDEN;
-                errorMessage = e.getMessage();
                 throw new UMEiException(
-                    errorMessage,
-                    status);
+                    e.getMessage(),
+                    Response.Status.FORBIDDEN);
             }
-
+            
             // response
             BodyPayload bodyPayload = new BodyPayload()
                     .withMeta(null)
@@ -243,21 +319,24 @@ public class DeviceModelAPI extends ServiceAPIBase
             throw new InternalErrorException(t.getMessage());
         }
 
-        log.info("({},{},{},{}); {}",
+        log.info("({},{},{},{},{},{}); {}",
             userId,
             sessionId,
-            targetId,
-            reqStatusString,
+            applicationId,
+            versionId,
+            name,
+            size,
             XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
 
         return response;
     }
 
     @DELETE
-    @Path("model/{targetId}")
+    @Path("application/{applicationId}/version/{versionId}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response delete(
-            @PathParam("targetId") String targetId)
+            @PathParam("applicationId") String applicationId,
+            @PathParam("versionId") String versionId)
     throws UMEiException, InternalErrorException
     {
         Response response = null;
@@ -265,20 +344,23 @@ public class DeviceModelAPI extends ServiceAPIBase
         
         final String userId = (String) request.getAttribute("userId");
         final String sessionId = (String) request.getAttribute("sessionId");
-
+        
         String errorMessage = XStringUtil.BLANK;
         try
-        {            
-            DeviceModelCache deviceModelCache;
+        {
             try
             {
-                deviceModelCache = DeviceModelManager.getInstance().getDeviceModelById(targetId);
-                DeviceModelManager.getInstance().deleteDeviceModel(deviceModelCache.getModelName());
+                // check if the application ID is valid
+                AppManager.getInstance().getApp(applicationId);
+                
+                // delete specific version of the application
+                AppManager.getInstance().deleteAppVersion(applicationId, versionId);
             }
             catch(DemeterException e)
             {
-                status = Status.FORBIDDEN;
+                status = Response.Status.FORBIDDEN;
                 errorMessage = e.getMessage();
+
                 throw new UMEiException(
                     errorMessage,
                     status);
@@ -308,16 +390,15 @@ public class DeviceModelAPI extends ServiceAPIBase
             throw new InternalErrorException(t.getMessage());
         }
 
-        log.info("({},{},{}); {}",
+        log.info("({},{}); {}",
             userId,
             sessionId,
-            targetId,
             XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
 
         return response;
     }
 
-    public static class PostDeviceModelRequest
+    public static class PostAppVersionRequest
     {
         private String name;
 
@@ -332,30 +413,42 @@ public class DeviceModelAPI extends ServiceAPIBase
         }
     }
     
-    public static class PostDeviceModelResult
+    public static class PostAppVersionResult
     {
-        private String modelId;
+        private String versionId;
 
-        public String getModelId()
+        public String getVersionId()
         {
-            return modelId;
+            return versionId;
         }
 
-        public void setModelId(String modelId)
+        public void setVersionId(String versionId)
         {
-            this.modelId = modelId;
+            this.versionId = versionId;
         }
     }
     
-    public static class PutDeviceModelRequest
+
+    public static class PutAppVersionRequest
     {
+        private String name;
         private String status;
 
-        public String getStatus()
+        public String getName()
         {
-            return status;
+            return name;
         }
 
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+        
+        public String getStatus()
+        {
+            return this.status;
+        }
+        
         public void setStatus(String status)
         {
             this.status = status;
