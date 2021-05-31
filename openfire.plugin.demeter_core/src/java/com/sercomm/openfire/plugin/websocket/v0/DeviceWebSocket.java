@@ -431,6 +431,7 @@ public class DeviceWebSocket
                     {
                         deviceCache.setPlatform("P_NEUTRAL");
                         deviceCache.setDeviceType(DeviceType.D_CPE);
+                        // deviceCache.setDeviceState(DeviceState.OFFLINE);
                         deviceCache.setModelName(modelName);
                         deviceCache.setCreationTime(creationTime);
                     }

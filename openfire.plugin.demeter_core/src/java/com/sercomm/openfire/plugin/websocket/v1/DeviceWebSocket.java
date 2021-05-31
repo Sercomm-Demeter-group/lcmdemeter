@@ -41,6 +41,7 @@ import com.sercomm.openfire.plugin.EndUserManager;
 import com.sercomm.openfire.plugin.OwnershipManager;
 import com.sercomm.openfire.plugin.cache.DeviceCache;
 import com.sercomm.openfire.plugin.component.DeviceComponent;
+import com.sercomm.openfire.plugin.define.DeviceState;
 import com.sercomm.openfire.plugin.define.DeviceType;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.define.OwnershipType;
@@ -418,6 +419,7 @@ public class DeviceWebSocket
                     {
                         deviceCache.setPlatform("P_NEUTRAL");
                         deviceCache.setDeviceType(DeviceType.D_CPE);
+                        // deviceCache.setDeviceState(DeviceState.OFFLINE);
                         deviceCache.setCreationTime(creationTime);
                     }
                     

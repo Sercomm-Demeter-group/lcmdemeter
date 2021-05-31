@@ -10,7 +10,6 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.jivesoftware.openfire.container.Plugin;
@@ -71,6 +70,8 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppsAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppVersionAPI.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.AppVersionsAPI.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.BatchAPI.class);
+            resourceConfig.register(com.sercomm.openfire.plugin.service.api.v2.InstallationsAPI.class);
 
             // register filters
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.AuthFilter.class);
