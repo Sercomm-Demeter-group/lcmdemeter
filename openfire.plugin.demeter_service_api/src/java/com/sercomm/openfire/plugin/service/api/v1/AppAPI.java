@@ -642,7 +642,12 @@ public class AppAPI extends ServiceAPIBase
                 break;
             }
 
-            DeviceManager.getInstance().controlApp(appId, serial, mac, appAction);
+            DeviceManager.getInstance().controlApp(
+                serial,
+                mac,
+                appId,
+                appAction);
+
             AppEventManager.getInstance().triggerAppEvent(
                 appId, 
                 appName, 

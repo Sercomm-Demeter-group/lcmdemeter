@@ -2,6 +2,9 @@ target/
 work/
 *.class
 
+# Ignore Maven factory path files
+.factorypath
+
 # Ignore Intellij Idea project files
 *.iml
 *.ipr

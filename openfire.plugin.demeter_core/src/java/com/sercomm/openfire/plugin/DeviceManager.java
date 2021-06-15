@@ -345,17 +345,38 @@ public class DeviceManager extends ManagerBase
     public void installApp(String serial, String mac, String appId)
     throws DemeterException, Throwable
     {        
-        final App app = AppManager.getInstance().getApp(appId);
-        if(null == app)
-        {
-            throw new DemeterException("INVALID APP ID");
-        }
-                
+        final App app = AppManager.getInstance().getApp(appId);                
         final AppVersion version = AppManager.getInstance().getAppLatestVersion(appId);
-        if(null == version)
+
+        final BlockingInstallListener listener = new BlockingInstallListener();
+        InstallAppTask installTask = new InstallAppTask(
+            serial,
+            mac,
+            app,
+            version,
+            60 * 1000L,
+            listener);
+       
+        TaskEngine.getInstance().schedule(installTask, 0L);
+        
+        synchronized(listener)
         {
-            throw new DemeterException("APP CANNOT BE INSTALLED TEMPORARILY");
+            listener.wait();
         }
+        
+        if(XStringUtil.isNotBlank(listener.errorMessage))
+        {
+            throw new DemeterException(listener.errorMessage);
+        }
+    }
+
+    // install specific version of the App
+    // blocking call
+    public void installApp(String serial, String mac, String appId, String versionId)
+    throws DemeterException, Throwable
+    {        
+        final App app = AppManager.getInstance().getApp(appId);                
+        final AppVersion version = AppManager.getInstance().getAppVersion(versionId);
 
         final BlockingInstallListener listener = new BlockingInstallListener();
         InstallAppTask installTask = new InstallAppTask(
@@ -720,10 +741,10 @@ public class DeviceManager extends ManagerBase
     }
     
     public void controlApp(
-            String appId,
-            String serial,
-            String mac,
-            AppAction appAction)
+        String serial,
+        String mac,
+        String appId,
+        AppAction appAction)
     throws DemeterException, Throwable
     {
         DeviceCache deviceCache = this.getDeviceCache(serial, mac);

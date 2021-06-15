@@ -15,8 +15,6 @@ import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.util.cache.CacheSizes;
 import org.jivesoftware.util.cache.CannotCalculateSizeException;
 import org.jivesoftware.util.cache.ExternalizableUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.EndUserManager;

@@ -59,7 +59,8 @@ public class StopAppAPI
 
             try
             {
-                DeviceManager.getInstance().controlApp(appId, serial, mac, AppAction.STOP);
+                DeviceManager.getInstance().controlApp(
+                    serial, mac, appId, AppAction.STOP);
             }
             catch(DemeterException e)
             {

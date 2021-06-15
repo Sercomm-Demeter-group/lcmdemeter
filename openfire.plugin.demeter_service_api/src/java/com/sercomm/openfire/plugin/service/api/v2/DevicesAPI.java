@@ -1,10 +1,5 @@
 package com.sercomm.openfire.plugin.service.api.v2;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,11 +12,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.csv.CSVFormat;
@@ -41,6 +34,7 @@ import com.sercomm.openfire.plugin.define.DeviceState;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
+import com.sercomm.openfire.plugin.service.util.StringStreamingOutput;
 
 @Path(DevicesAPI.URI_PATH)
 @RequireRoles({EndUserRole.ADMIN, EndUserRole.EDITOR})
@@ -545,39 +539,6 @@ public class DevicesAPI extends ServiceAPIBase
         }
         
         return builder.toString();
-    }
-
-    public static class StringStreamingOutput implements StreamingOutput 
-    {
-        private static final int BUFFER_LENGTH = 256;
-
-        private String value;
-        public StringStreamingOutput(String value)
-        {
-            this.value = value;
-        }
-        
-        @Override
-        public void write(OutputStream output)
-        throws IOException, WebApplicationException 
-        {
-            try(InputStream is = 
-                    new ByteArrayInputStream(this.value.getBytes(StandardCharsets.UTF_8)))
-            {
-                byte[] buffer = new byte[BUFFER_LENGTH];
-                int length = 0;
-                
-                while((length = is.read(buffer, 0, BUFFER_LENGTH)) != -1) 
-                {
-                    output.write(buffer, 0, length);
-                }
-                output.flush();
-            } 
-            catch(Throwable t) 
-            {  
-                log.error(t.getMessage(), t); 
-            }
-        }
     }
 
     public static class GetDeviceResult

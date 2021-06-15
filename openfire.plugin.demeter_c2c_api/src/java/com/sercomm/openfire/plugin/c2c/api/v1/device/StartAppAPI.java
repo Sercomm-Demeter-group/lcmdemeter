@@ -59,7 +59,8 @@ public class StartAppAPI
 
             try
             {
-                DeviceManager.getInstance().controlApp(appId, serial, mac, AppAction.START);
+                DeviceManager.getInstance().controlApp(
+                    serial, mac, appId, AppAction.START);
             }
             catch(DemeterException e)
             {
