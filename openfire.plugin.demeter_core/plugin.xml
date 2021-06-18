@@ -9,5 +9,5 @@
     <date>06/01/2020</date>
     <minServerVersion>4.5.4</minServerVersion>
     <databaseKey>demeter_core</databaseKey>
-    <databaseVersion>4</databaseVersion>
+    <databaseVersion>5</databaseVersion>
 </plugin>
