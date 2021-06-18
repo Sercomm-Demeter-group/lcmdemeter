@@ -155,7 +155,14 @@ public class AppManager extends ManagerBase
             byte[] iconData)
     throws DemeterException, Throwable
     {
-        if(null != this.getApp(publisher, name, modelName))
+        App application = null;
+        try
+        {
+            application = this.getApp(publisher, name, modelName);
+        }
+        catch(DemeterException ignored) {}
+
+        if(null != application)
         {
             throw new DemeterException("APPLICATION ALREADY EXISTS");
         }

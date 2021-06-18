@@ -4,11 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +17,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -34,14 +29,11 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.jivesoftware.database.DbConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.umei.BodyPayload;
-import com.sercomm.commons.umei.Meta;
-import com.sercomm.commons.util.DateTime;
 import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.commons.util.Json;
 import com.sercomm.commons.util.XStringUtil;
@@ -66,158 +58,6 @@ public class BatchAPI extends ServiceAPIBase
 
     @Context 
     private HttpServletRequest request;
-    
-    @GET
-    @Path("batches")
-    @Produces({MediaType.APPLICATION_JSON})
-    public Response get(
-            @QueryParam("from") Integer from,
-            @QueryParam("size") Integer size,
-            @QueryParam("begin") String begin,
-            @QueryParam("end") String end,
-            @QueryParam("filter") List<String> filters)
-    throws UMEiException, InternalErrorException
-    {
-        Response response = null;
-        Response.Status status = Status.OK;
-
-        final String userId = (String) request.getAttribute("userId");
-        final String sessionId = (String) request.getAttribute("sessionId");
-
-        String errorMessage = XStringUtil.BLANK;
-        try
-        {
-            DateTime beginTime = null;
-            DateTime endTime = null;
-
-            if(XStringUtil.isNotBlank(begin))
-            {
-                try
-                {
-                    beginTime = DateTime.from(begin, DateTime.FORMAT_ISO_MS);
-                }
-                catch(Throwable t1)
-                {
-                    status = Response.Status.BAD_REQUEST;
-                    errorMessage = "INVALID 'begin': " + begin;
-    
-                    throw new UMEiException(
-                        errorMessage,
-                        Response.Status.BAD_REQUEST);
-                }
-            }
-
-            if(XStringUtil.isNotBlank(end))
-            {
-                try
-                {
-                    endTime = DateTime.from(begin, DateTime.FORMAT_ISO_MS);
-                }
-                catch(Throwable t1)
-                {
-                    status = Response.Status.BAD_REQUEST;
-                    errorMessage = "INVALID 'end': " + end;
-    
-                    throw new UMEiException(
-                        errorMessage,
-                        Response.Status.BAD_REQUEST);
-                }
-            }
-
-            int totalCount = 0;
-
-            // query total rows count
-            Connection conn = null;
-            PreparedStatement stmt = null;
-            ResultSet rs = null;
-            try
-            {
-                List<Object> arguments = new ArrayList<>();
-
-                conn = DbConnectionManager.getConnection();
-                stmt = conn.prepareStatement(
-                    generateQueryTotalStatement(beginTime, endTime, filters, arguments));
-
-                for(int idx = 0; idx < arguments.size(); idx++)
-                {
-                    stmt.setObject(idx + 1, arguments.get(idx));
-                }
-
-                rs = stmt.executeQuery();
-                rs.next();
-
-                totalCount = rs.getInt("count");
-            }
-            finally
-            {
-                DbConnectionManager.closeConnection(rs, stmt, conn);
-            }
-
-            // query rows data
-            List<GetBatchResult> result = new ArrayList<>();
-            try
-            {
-                List<Object> arguments = new ArrayList<>();
-
-                conn = DbConnectionManager.getConnection();
-                stmt = conn.prepareStatement(
-                    generateQueryRowsStatement(from, size, beginTime, endTime, filters, arguments));
-                
-                for(int idx = 0; idx < arguments.size(); idx++)
-                {
-                    stmt.setObject(idx + 1, arguments.get(idx));
-                }
-
-                rs = stmt.executeQuery();
-                while(rs.next())
-                {
-
-                }
-
-                // response
-                BodyPayload bodyPayload = new BodyPayload()
-                        .withMeta(new Meta()
-                            .withFrom(from == null ? 0 : from)
-                            .withSize(result.size())
-                            .withTotal(totalCount))
-                        .withData(result);
-
-                response = Response
-                    .status(status)
-                    .type(MediaType.APPLICATION_JSON)
-                    .entity(bodyPayload.toString())
-                    .build();            
-            }
-            finally
-            {
-                DbConnectionManager.closeConnection(rs, stmt, conn);
-            }
-        }
-        catch(UMEiException e)
-        {
-            status = e.getErrorStatus();            
-            errorMessage = e.getMessage();
-            throw e;
-        }
-        catch(Throwable t)
-        {
-            status = Response.Status.INTERNAL_SERVER_ERROR;            
-            errorMessage = org.apache.commons.lang.exception.ExceptionUtils.getStackTrace(t);
-            throw new InternalErrorException(t.getMessage());
-        }
-
-        log.info("({},{},{},{},{},{},{}); {}",
-            userId,
-            sessionId,
-            from,
-            size,
-            begin,
-            end,
-            filters,
-            XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
-
-        return response;
-    }
 
     @POST
     @Path("batch")
@@ -237,7 +77,7 @@ public class BatchAPI extends ServiceAPIBase
 
         String applicationId = XStringUtil.BLANK;
         String versionId = XStringUtil.BLANK;
-        Integer command = -1;
+        Integer command = null;
         int size = 0;
 
         String errorMessage = XStringUtil.BLANK;
@@ -314,13 +154,12 @@ public class BatchAPI extends ServiceAPIBase
             // obtain the file size
             size = bufferArray.length;
 
-            final String[] FILE_HEADER = {"Serial", "MAC"};
-            final CSVFormat formatter = CSVFormat.DEFAULT.withHeader(FILE_HEADER).withSkipHeaderRecord();
+            String csvText = new String(bufferArray);
 
             List<String> totalDevices = new ArrayList<>();
-            try(Reader reader = new StringReader(new String(bufferArray)))
+            try(Reader reader = new StringReader(csvText))
             {
-                try(CSVParser csvParser = new CSVParser(reader, formatter))
+                try(CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT))
                 {
                     for(CSVRecord csvRecord : csvParser)
                     {
@@ -592,8 +431,7 @@ public class BatchAPI extends ServiceAPIBase
     @Path("batch/{batchId}/export")
     @Produces({MediaType.APPLICATION_JSON})
     public Response export(
-            @PathParam("batchId") String batchId,
-            String requestPayload)
+            @PathParam("batchId") String batchId)
     throws UMEiException, InternalErrorException
     {
         Response response = null;
@@ -621,7 +459,7 @@ public class BatchAPI extends ServiceAPIBase
             }
 
             BatchState batchState = BatchState.fromString(batch.getState());
-            if(batchState != BatchState.TERMINATED)
+            if(batchState != BatchState.TERMINATED && batchState != BatchState.DONE)
             {
                 status = Response.Status.FORBIDDEN;
                 errorMessage = "BATCH TASK HAS NOT BEEN TERMINATED YET. PLEASE TERMINATE IT AT FIRST.";
@@ -676,159 +514,6 @@ public class BatchAPI extends ServiceAPIBase
         return response;
     }
 
-    private static String generateQueryTotalStatement(
-        DateTime beginTime,
-        DateTime endTime,
-        List<String> filters,
-        List<Object> arguments)
-    throws UMEiException, InternalErrorException
-    {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SELECT COUNT(*) AS `count` FROM `sBatch` ");
-
-        if((null != beginTime && null != endTime) || !filters.isEmpty())
-        {
-            builder.append("WHERE ");
-        }
-
-        if(null != beginTime && null != endTime)
-        {
-            builder.append("`creationTime` > ? AND `creationTime` < ? ");
-            if(!filters.isEmpty())
-            {
-                builder.append("AND ");
-            }
-        }
-
-        List<String[]> statusFilters = new ArrayList<>();
-
-        if(!filters.isEmpty())
-        {
-            // preprocess the filters
-            Iterator<String> iterator = filters.iterator();
-            while(iterator.hasNext())
-            {
-                final String filter = iterator.next();
-                String[] tokens = filter.split(":", 2);
-                if(2 != tokens.length)
-                {
-                    throw new UMEiException(
-                        "INVALID FILTER: " + filter,
-                        Response.Status.BAD_REQUEST);
-                }
-
-                switch(tokens[0])
-                {
-                    case "status":
-                        statusFilters.add(tokens);
-                        break;
-                    default:
-                        throw new UMEiException(
-                            "INVALID FILTER ATTRIBUTE: " + tokens[0],
-                            Response.Status.BAD_REQUEST);
-                }
-            }                
-        }
-
-        Iterator<String[]> iterator = statusFilters.iterator();
-        while(iterator.hasNext())
-        {
-            builder.append("(`state` = ? ");
-
-            if(iterator.hasNext())
-            {
-                builder.append("OR ");
-            }
-            else
-            {
-                builder.append(") ");
-            }
-        }
-
-        return builder.toString();
-    }
-
-    private static String generateQueryRowsStatement(
-        Integer from,
-        Integer size,
-        DateTime beginTime,
-        DateTime endTime,
-        List<String> filters,
-        List<Object> arguments)
-    throws UMEiException, InternalErrorException
-    {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SELECT * FROM `sBatch` ");
-
-        if((null != beginTime && null != endTime) || !filters.isEmpty())
-        {
-            builder.append("WHERE ");
-        }
-
-        if(null != beginTime && null != endTime)
-        {
-            builder.append("`creationTime` > ? AND `creationTime` < ? ");
-            if(!filters.isEmpty())
-            {
-                builder.append("AND ");
-            }
-        }
-
-        List<String[]> statusFilters = new ArrayList<>();
-
-        if(!filters.isEmpty())
-        {
-            // preprocess the filters
-            Iterator<String> iterator = filters.iterator();
-            while(iterator.hasNext())
-            {
-                final String filter = iterator.next();
-                String[] tokens = filter.split(":", 2);
-                if(2 != tokens.length)
-                {
-                    throw new UMEiException(
-                        "INVALID FILTER: " + filter,
-                        Response.Status.BAD_REQUEST);
-                }
-
-                switch(tokens[0])
-                {
-                    case "status":
-                        statusFilters.add(tokens);
-                        break;
-                    default:
-                        throw new UMEiException(
-                            "INVALID FILTER ATTRIBUTE: " + tokens[0],
-                            Response.Status.BAD_REQUEST);
-                }
-            }                
-        }
-
-        Iterator<String[]> iterator = statusFilters.iterator();
-        while(iterator.hasNext())
-        {
-            builder.append("(`state` = ? ");
-
-            if(iterator.hasNext())
-            {
-                builder.append("OR ");
-            }
-            else
-            {
-                builder.append(") ");
-            }
-        }
-
-        if(null != from && null != size)
-        {
-            builder.append("LIMIT ?,?");
-            arguments.add(from);
-            arguments.add(size);
-        }
-
-        return builder.toString();
-    }
-
     private enum BatchStatus
     {
         EXECUTING("executing"),
@@ -859,74 +544,6 @@ public class BatchAPI extends ServiceAPIBase
         public static BatchStatus fromString(String value)
         {
             return map.get(value);
-        }
-    }
-
-    public static class GetBatchResult
-    {
-        private String batchId;
-        private String status;
-        private String creationTime;
-        private Integer command;
-        private Integer progress;
-        private Integer totalDevicesCount;
-        private Integer failureDevicesCount;
-
-        public String getBatchId()
-        {
-            return batchId;
-        }
-        public void setBatchId(String batchId)
-        {
-            this.batchId = batchId;
-        }
-        public String getStatus()
-        {
-            return status;
-        }
-        public void setStatus(String status)
-        {
-            this.status = status;
-        }
-        public String getCreationTime()
-        {
-            return creationTime;
-        }
-        public void setCreationTime(String creationTime)
-        {
-            this.creationTime = creationTime;
-        }
-        public Integer getCommand()
-        {
-            return command;
-        }
-        public void setCommand(Integer command)
-        {
-            this.command = command;
-        }
-        public Integer getProgress()
-        {
-            return progress;
-        }
-        public void setProgress(Integer progress)
-        {
-            this.progress = progress;
-        }
-        public Integer getTotalDevicesCount()
-        {
-            return totalDevicesCount;
-        }
-        public void setTotalDevicesCount(Integer totalDevicesCount)
-        {
-            this.totalDevicesCount = totalDevicesCount;
-        }
-        public Integer getFailureDevicesCount()
-        {
-            return failureDevicesCount;
-        }
-        public void setFailureDevicesCount(Integer failureDevicesCount)
-        {
-            this.failureDevicesCount = failureDevicesCount;
         }
     }
 

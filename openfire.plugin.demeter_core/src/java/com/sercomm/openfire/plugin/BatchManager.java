@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import com.sercomm.common.util.ManagerBase;
@@ -23,6 +24,7 @@ import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.cluster.ClusterManager;
 import org.jivesoftware.openfire.cluster.ClusterNodeInfo;
+import org.jivesoftware.util.TaskEngine;
 import org.jivesoftware.util.cache.CacheFactory;
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
@@ -85,7 +87,7 @@ public class BatchManager extends ManagerBase
             rs = stmt.executeQuery();
             if(!rs.next())
             {
-                throw new DemeterException("BATCH CANNOT BE FOUND");
+                throw new DemeterException("BATCH CANNOT BE FOUND: " + batchId);
             }
 
             batch = Batch.from(rs);
@@ -112,7 +114,6 @@ public class BatchManager extends ManagerBase
         Batch batch = null;
         DateTime now = DateTime.now();
 
-        boolean isNewTask = false;
         if(XStringUtil.isBlank(batchId))
         {
             batchId = UUID.randomUUID().toString();
@@ -124,8 +125,6 @@ public class BatchManager extends ManagerBase
             batch.setNodeId(XMPPServer.getInstance().getNodeID().toString());
             batch.setCreationTime(now.getTimeInMillis());
             batch.setUpdatedTime(now.getTimeInMillis());
-
-            isNewTask = true;
         }
         else
         {
@@ -186,23 +185,32 @@ public class BatchManager extends ManagerBase
             stmt.setBytes(++idx, batch.getData());
             stmt.executeUpdate();
 
-            // get cluster nodes information
-            List<ClusterNodeInfo> nodes = new ArrayList<>(ClusterManager.getNodesInfo());
-            if(nodes.isEmpty())
-            {
-                throw new DemeterException("NO CLUSTER NODE AVAILABLE");
-            }
-
-            // random a cluster node to execute the batch task
-            Collections.shuffle(nodes);
-            ClusterNodeInfo node = nodes.get(0);
-
             // create cluster task if necessary
-            if(true == isNewTask)
+            if(batchState == BatchState.PENDING)
             {
-                CacheFactory.doClusterTask(
-                    new BatchTask(batchId), 
-                    node.getNodeID().toByteArray());
+                // get cluster nodes information
+                List<ClusterNodeInfo> nodes = new ArrayList<>(ClusterManager.getNodesInfo());
+                if(nodes.isEmpty())
+                {
+                    throw new DemeterException("NO CLUSTER NODE AVAILABLE");
+                }
+
+                // random a cluster node to execute the batch task
+                Collections.shuffle(nodes);
+
+                final ClusterNodeInfo node = nodes.get(0);
+                final String passValue = batchId;
+
+                TaskEngine.getInstance().schedule(new TimerTask(){
+                    @Override
+                    public void run() 
+                    {
+                        CacheFactory.doClusterTask(
+                            new BatchTask(passValue), 
+                            node.getNodeID().toByteArray());
+                    }
+                }, 
+                3 * 1000L);
             }
 
             abortTransaction = false;

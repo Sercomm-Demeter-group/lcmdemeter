@@ -87,6 +87,7 @@ public class BatchTask implements ClusterTask<Void>
                         case INSTALL_START:
                             DeviceManager.getInstance().installApp(
                                 serial, mac, batch.getApplicationId(), batch.getVersionId());
+                            Thread.sleep(1000L);
                             DeviceManager.getInstance().controlApp(
                                 serial, mac, batch.getApplicationId(), AppAction.START);
                             break;
