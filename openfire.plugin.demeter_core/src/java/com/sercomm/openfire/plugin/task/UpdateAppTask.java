@@ -1,9 +1,14 @@
 package com.sercomm.openfire.plugin.task;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
+import java.util.UUID;
 
+import org.jivesoftware.database.DbConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +71,16 @@ public class UpdateAppTask extends TimerTask
     private long startTime = 0L;
     private long maxInterval = 0L;
     private Listener listener = null;
+
+    private final static String TABLE_S_APP_INSTALLATION = "sAppInstallation";
+    private final static String SQL_QUERY_APP_INSTALLATION =
+        String.format("SELECT * FROM `%s` WHERE `serial`=? AND `mac`=? AND `appId`=? LIMIT 1",
+            TABLE_S_APP_INSTALLATION);
+    private final static String SQL_UPDATE_APP_INSTALLATION =
+        String.format("INSERT INTO `%s`(`id`,`serial`,`mac`,`appId`,`versionId`,`creationTime`) " +
+            "VALUES(?,?,?,?,?,?) " +
+            "ON DUPLICATE KEY UPDATE `versionId`=? AND `creationTime`=?",
+            TABLE_S_APP_INSTALLATION);
 
     public UpdateAppTask(
             String serial,
@@ -263,6 +278,58 @@ public class UpdateAppTask extends TimerTask
             }
             else
             {
+                Connection conn = null;
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
+        
+                // query if installation record of the App exists
+                String installationId = XStringUtil.BLANK;
+                try
+                {
+                    conn = DbConnectionManager.getConnection();
+                    stmt = conn.prepareStatement(SQL_QUERY_APP_INSTALLATION);
+
+                    int idx = 0;
+                    stmt.setString(++idx, serial);
+                    stmt.setString(++idx, mac);
+                    stmt.setString(++idx, this.app.getId());
+
+                    rs = stmt.executeQuery();
+                    if(rs.next())
+                    {
+                        installationId = rs.getString("id");
+                    }
+                }
+                finally
+                {
+                    DbConnectionManager.closeConnection(rs, stmt, conn);
+                }
+                
+                // insert/update installation record into database
+                try
+                {
+                    final long now = System.currentTimeMillis();
+
+                    conn = DbConnectionManager.getConnection();
+                    stmt = conn.prepareStatement(SQL_UPDATE_APP_INSTALLATION);
+
+                    int idx = 0;
+                    stmt.setString(++idx, XStringUtil.isBlank(installationId) ? UUID.randomUUID().toString() : installationId);
+                    stmt.setString(++idx, serial);
+                    stmt.setString(++idx, mac);
+                    stmt.setString(++idx, this.app.getId());                
+                    stmt.setString(++idx, this.version.getId());
+                    stmt.setLong(++idx, now);
+                    stmt.setString(++idx, this.version.getId());
+                    stmt.setLong(++idx, now);
+
+                    stmt.executeUpdate();
+                }
+                finally
+                {
+                    DbConnectionManager.closeConnection(stmt, conn);
+                }
+
                 // notify "completed"
                 try
                 {

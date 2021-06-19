@@ -54,14 +54,18 @@ public class DeviceManager extends ManagerBase
 
     private final static String TABLE_S_APP_VERSION = "sAppVersion";
     private final static String TABLE_S_DEVICE_PROP = "sDeviceProp";
+    private final static String TABLE_S_APP_INSTALLATION = "sAppInstallation";
 
     private final static String SQL_INCREASE_APP_REMOVED_COUNT =
-            String.format("UPDATE `%s` SET `removedCount`=`removedCount`+1 WHERE `version`=? AND `appId`=?",
-                TABLE_S_APP_VERSION);
+        String.format("UPDATE `%s` SET `removedCount`=`removedCount`+1 WHERE `version`=? AND `appId`=?",
+            TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_DISTINCT_MODEL_NAMES =
-            String.format("SELECT DISTINCT(`propValue`) FROM `%s` WHERE `name`='sercomm.device.model.name';",
-                TABLE_S_DEVICE_PROP);
-
+        String.format("SELECT DISTINCT(`propValue`) FROM `%s` WHERE `name`='sercomm.device.model.name';",
+            TABLE_S_DEVICE_PROP);
+    private final static String SQL_DELETE_APP_INSTALLATION =
+        String.format("DELETE FROM `%s` WHERE `serial`=? AND `mac`=? AND `appId`=?",
+            TABLE_S_APP_INSTALLATION);
+        
     private final static int MAX_RETRY_COUNT = 2;
     
     private final UserEventListener userEventListener = new UserEventListener()
@@ -348,26 +352,7 @@ public class DeviceManager extends ManagerBase
         final App app = AppManager.getInstance().getApp(appId);                
         final AppVersion version = AppManager.getInstance().getAppLatestVersion(appId);
 
-        final BlockingInstallListener listener = new BlockingInstallListener();
-        InstallAppTask installTask = new InstallAppTask(
-            serial,
-            mac,
-            app,
-            version,
-            60 * 1000L,
-            listener);
-       
-        TaskEngine.getInstance().schedule(installTask, 0L);
-        
-        synchronized(listener)
-        {
-            listener.wait();
-        }
-        
-        if(XStringUtil.isNotBlank(listener.errorMessage))
-        {
-            throw new DemeterException(listener.errorMessage);
-        }
+        this.installApp(serial, mac, app.getId(), version.getId());
     }
 
     // install specific version of the App
@@ -410,17 +395,8 @@ public class DeviceManager extends ManagerBase
             InstallAppTask.Listener listener)
     throws DemeterException, Throwable
     {
-        final App app = AppManager.getInstance().getApp(appId);
-        if(null == app)
-        {
-            throw new DemeterException("INVALID APP ID");
-        }
-                
+        final App app = AppManager.getInstance().getApp(appId);                
         final AppVersion version = AppManager.getInstance().getAppVersion(versionId);
-        if(null == version)
-        {
-            throw new DemeterException("INVALID VERSION ID");
-        }
 
         InstallAppTask installTask = new InstallAppTask(
             serial, 
@@ -441,17 +417,8 @@ public class DeviceManager extends ManagerBase
             UpdateAppTask.Listener listener)
     throws DemeterException, Throwable
     {
-        final App app = AppManager.getInstance().getApp(appId);
-        if(null == app)
-        {
-            throw new DemeterException("INVALID APP ID");
-        }
-                
+        final App app = AppManager.getInstance().getApp(appId);                
         final AppVersion version = AppManager.getInstance().getAppVersion(versionId);
-        if(null == version)
-        {
-            throw new DemeterException("INVALID VERSION ID");
-        }
 
         UpdateAppTask patchTask = new UpdateAppTask(
             serial, 
@@ -467,23 +434,19 @@ public class DeviceManager extends ManagerBase
     public void uninstallApp(String serial, String mac, String appId)
     throws DemeterException, Throwable
     {
+        final App app = AppManager.getInstance().getApp(appId);
+
         DeviceCache deviceCache = this.getDeviceCache(serial, mac);
         if(null == deviceCache)
         {
             throw new DemeterException("DEVICE CANNOT BE FOUND");
         }
-        
+
         if(0 != DeviceState.ONLINE.compareTo(deviceCache.getDeviceState()))
         {
             throw new DemeterException("DEVICE IS UNAVAILABLE TEMPORARILY");
         }        
         
-        final App app = AppManager.getInstance().getApp(appId);
-        if(null == app)
-        {
-            throw new DemeterException("INVALID APP ID");
-        }
-
         final AppInstallation installation = this.getInstalledApp(serial, mac, app.getName());
         if(null == installation)
         {
@@ -499,9 +462,10 @@ public class DeviceManager extends ManagerBase
             locker.lock();
             
             // update database
-            boolean abortTransaction = true;
             Connection conn = null;
             PreparedStatement stmt = null;
+
+            boolean abortTransaction = true;
             try
             {
                 conn = DbConnectionManager.getConnection();
@@ -512,7 +476,8 @@ public class DeviceManager extends ManagerBase
                 stmt.setString(++idx, installation.getVersion());
                 stmt.setString(++idx, appId);                
                 stmt.executeUpdate();
-                
+                DbConnectionManager.fastcloseStmt(stmt);
+
                 // send command to gateway
                 for(int counter = 1; counter <= MAX_RETRY_COUNT; counter++)
                 {
@@ -538,10 +503,21 @@ public class DeviceManager extends ManagerBase
                         }
                         else
                         {
+                            // prevent from sending commands frequently
+                            Thread.sleep(3 * 1000L);
                             continue;
                         }
                     }
                 }
+
+                // delete installation record from database
+                stmt = conn.prepareStatement(SQL_DELETE_APP_INSTALLATION);
+
+                idx = 0;
+                stmt.setString(++idx, serial);
+                stmt.setString(++idx, mac);
+                stmt.setString(++idx, appId);
+                stmt.executeUpdate();
 
                 abortTransaction = false;
                 
