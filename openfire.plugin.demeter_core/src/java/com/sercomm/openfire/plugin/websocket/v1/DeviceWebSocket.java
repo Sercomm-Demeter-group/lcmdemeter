@@ -419,7 +419,7 @@ public class DeviceWebSocket
                     {
                         deviceCache.setPlatform("P_NEUTRAL");
                         deviceCache.setDeviceType(DeviceType.D_CPE);
-                        // deviceCache.setDeviceState(DeviceState.OFFLINE);
+                        deviceCache.setDeviceState(DeviceState.OFFLINE);
                         deviceCache.setCreationTime(creationTime);
                     }
                     
