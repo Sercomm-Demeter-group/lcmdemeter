@@ -58,8 +58,8 @@ public class GetDeviceAPI
             GetDeviceResult.ResultData data = new GetDeviceResult.ResultData();
             try
             {
-                DeviceCache deviceCache = DeviceManager.getInstance().getDeviceCache(nodeName);
-                
+                DeviceCache deviceCache = DeviceManager.getInstance().getDeviceCache(NameRule.toDeviceSerial(nodeName), NameRule.toDeviceMac(nodeName));
+
                 data.setSerial(deviceCache.getSerial());
                 data.setMac(deviceCache.getMac());
                 data.setModel(deviceCache.getModelName());

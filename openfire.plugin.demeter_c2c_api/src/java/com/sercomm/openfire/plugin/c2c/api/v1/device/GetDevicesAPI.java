@@ -233,7 +233,7 @@ public class GetDevicesAPI
             List<GetDevicesResult.ResultData> data = new ArrayList<>();
             for(String nodeName : devices)
             {
-                DeviceCache deviceCache = DeviceManager.getInstance().getDeviceCache(nodeName);
+                DeviceCache deviceCache = DeviceManager.getInstance().getDeviceCache(NameRule.toDeviceSerial(nodeName), NameRule.toDeviceMac(nodeName));
 
                 GetDevicesResult.ResultData row = new GetDevicesResult.ResultData();
                 row.setSerial(deviceCache.getSerial());
