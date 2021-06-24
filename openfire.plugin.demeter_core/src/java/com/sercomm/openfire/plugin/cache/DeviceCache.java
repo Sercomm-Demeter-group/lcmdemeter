@@ -218,79 +218,76 @@ public class DeviceCache implements CacheBase
     {
         synchronized (this) 
         {
-            // original values
-            DeviceCache cache = DeviceManager.getInstance().getDeviceCache(this.serial, this.mac);
-            
-            // perhaps new values
-            Map<String, String> properties = new HashMap<String, String>();
 
-            if(ValueUtil.isModified(
-                null != cache.deviceType ? cache.deviceType.name() : XStringUtil.BLANK, 
-                null != this.deviceType ? this.deviceType.name() : XStringUtil.BLANK))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_TYPE.toString(), this.deviceType.name());
-            }
-
-            if(ValueUtil.isModified(cache.modelName, this.modelName))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_MODEL_NAME.toString(), this.modelName);
-            }
-
-            if(ValueUtil.isModified(cache.firmwareVersion, this.firmwareVersion))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_FIRMWARE_VERSION.toString(), this.firmwareVersion);
-            }
-
-            if(ValueUtil.isModified(
-                null != cache.deviceState ? cache.deviceState.name() : XStringUtil.BLANK, 
-                null != this.deviceState ? this.deviceState.name() : XStringUtil.BLANK))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_STATE.toString(), this.deviceState.name());
-            }
-
-            if(ValueUtil.isModified(cache.lastOfflineTime, this.lastOfflineTime))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_LAST_OFFLINE_TIME.toString(), this.lastOfflineTime.toString());
-            }
-
-            if(ValueUtil.isModified(cache.lastOnlineTime, this.lastOnlineTime))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_LAST_ONLINE_TIME.toString(), this.lastOnlineTime.toString());
-            }
-
-            if(ValueUtil.isModified(cache.company, this.company))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_COMPANY.toString(), this.company);
-            }
-
-            if(ValueUtil.isModified(cache.customName, this.customName))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_CUSTOM_NAME.toString(), this.customName);
-            }
-
-            if(ValueUtil.isModified(cache.enable, this.enable))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_ENABLE.toString(), this.enable.toString());
-            }
-
-            if(ValueUtil.isModified(cache.protocolVersion, this.protocolVersion))
-            {
-                properties.put(DeviceProperty.SERCOMM_DEVICE_PROTOCOL_VERSION.toString(), this.protocolVersion.toString());
-            }
-
-            // update database
             try
             {
+                // original values need to be loaded from db
+                DeviceCache cache = new DeviceCache(this.serial, this.mac); //tmp cache load properties with current serial n mac, to be compared
+                // perhaps new values
+                Map<String, String> properties = new HashMap<String, String>();
+
+                if(ValueUtil.isModified(
+                    null != cache.deviceType ? cache.deviceType.name() : XStringUtil.BLANK,
+                    null != this.deviceType ? this.deviceType.name() : XStringUtil.BLANK))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_TYPE.toString(), this.deviceType.name());
+                }
+
+                if(ValueUtil.isModified(cache.modelName, this.modelName))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_MODEL_NAME.toString(), this.modelName);
+                }
+
+                if(ValueUtil.isModified(cache.firmwareVersion, this.firmwareVersion))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_FIRMWARE_VERSION.toString(), this.firmwareVersion);
+                }
+
+                if(ValueUtil.isModified(
+                    null != cache.deviceState ? cache.deviceState.name() : XStringUtil.BLANK,
+                    null != this.deviceState ? this.deviceState.name() : XStringUtil.BLANK))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_STATE.toString(), this.deviceState.name());
+                }
+
+                if(ValueUtil.isModified(cache.lastOfflineTime, this.lastOfflineTime))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_LAST_OFFLINE_TIME.toString(), this.lastOfflineTime.toString());
+                }
+
+                if(ValueUtil.isModified(cache.lastOnlineTime, this.lastOnlineTime))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_LAST_ONLINE_TIME.toString(), this.lastOnlineTime.toString());
+                }
+
+                if(ValueUtil.isModified(cache.company, this.company))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_COMPANY.toString(), this.company);
+                }
+
+                if(ValueUtil.isModified(cache.customName, this.customName))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_CUSTOM_NAME.toString(), this.customName);
+                }
+
+                if(ValueUtil.isModified(cache.enable, this.enable))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_ENABLE.toString(), this.enable.toString());
+                }
+
+                if(ValueUtil.isModified(cache.protocolVersion, this.protocolVersion))
+                {
+                    properties.put(DeviceProperty.SERCOMM_DEVICE_PROTOCOL_VERSION.toString(), this.protocolVersion.toString());
+                }
                 this.updateProperties(properties);
             }
-            catch(SQLException e)
+            catch(SQLException | UserNotFoundException e)
             {
                 throw new DemeterException(e.getMessage());
             }
-
             // update cluster caches
             DeviceManager.getInstance().updateDeviceCache(this.serial, this.mac, this);
-        }        
+        }
     }
     
     private void loadProperties() 
