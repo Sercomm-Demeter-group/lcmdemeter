@@ -91,7 +91,7 @@ public class C2CNotifyManager extends ManagerBase implements KafkaProducerHandle
                         topic, 
                         PropertyManager.getInstance().getKafkaConfig().getTopicPartitionCount());
                 }
-
+                Thread.currentThread().setContextClassLoader(null); //for fixing exception, that appeared while producer is creating(when kafka conf changed)
                 // create Kafka producer
                 this.producer = new KafkaProducerClient.Builder()
                         .bootstrapServer(PropertyManager.getInstance().getKafkaConfig().getBootstrapServers())

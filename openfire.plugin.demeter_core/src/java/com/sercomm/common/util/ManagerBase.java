@@ -16,14 +16,20 @@ public abstract class ManagerBase
     
     public void initialize()
     {
-        onInitialize();
-        this.isInitialized = true;
+        if(this.isInitialized() != true)
+        {
+          onInitialize();
+          this.isInitialized = true;
+        }
     }
     
     public void uninitialize()
     {
-        onUninitialize();
-        this.isInitialized = false;
+        if(this.isInitialized() != false)
+        {
+          onUninitialize();
+          this.isInitialized = false;
+        }
     }
     
     protected abstract void onInitialize();
