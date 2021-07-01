@@ -80,7 +80,8 @@ public class DemeterServiceAPIPlugin implements Plugin
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v1.PermissionFilter.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.v2.PermissionFilter.class);
             resourceConfig.register(com.sercomm.openfire.plugin.service.filter.CORSFilter.class);
-            
+            resourceConfig.register(com.sercomm.openfire.plugin.service.filter.ResourceFilter.class);
+
             // register exception mapper
             // create servlet container
             ServletContainer servletContainer = new ServletContainer(resourceConfig);

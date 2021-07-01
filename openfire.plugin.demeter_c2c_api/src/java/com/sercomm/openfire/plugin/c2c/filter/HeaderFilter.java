@@ -27,7 +27,7 @@ public class HeaderFilter implements ContainerRequestFilter
         if(XStringUtil.isBlank(requestId) || XStringUtil.isBlank(originatorId))
         {
             throw new UMEiException(
-                    "HTTP HEADER 'X_Request_ID' OR 'X_Originator_ID' CANNOT BE BLANK",
+                    "HTTP HEADER 'X-Request-ID' OR 'X-Originator-ID' CANNOT BE BLANK",
                     Status.BAD_REQUEST);
         }
     }
