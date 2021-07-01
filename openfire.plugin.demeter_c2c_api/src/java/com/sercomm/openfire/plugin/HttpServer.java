@@ -45,6 +45,8 @@ public class HttpServer
                 com.sercomm.openfire.plugin.c2c.filter.CORSFilter.class);
             resourceConfig.register(
                 com.sercomm.openfire.plugin.c2c.filter.HeaderFilter.class);
+            resourceConfig.register(
+                com.sercomm.openfire.plugin.c2c.filter.ResourceFilter.class);
             // register resources: exceptions
             resourceConfig.register(
                 com.sercomm.openfire.plugin.c2c.exception.UMEiException.class);
