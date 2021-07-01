@@ -8,7 +8,8 @@ public enum SystemProperty
     SERCOMM_DEMETER_HOST_SERVICE_API("sercomm.demeter.host.service.api"),
     SERCOMM_DEMETER_HOST_DEVICE_ENTRY("sercomm.demeter.host.device.entry"),
     SERCOMM_DEMETER_STORAGE("sercomm.demeter.storage"),
-    SERCOMM_DEMETER_STORAGE_SCHEME("sercomm.demeter.storage.scheme");
+    SERCOMM_DEMETER_STORAGE_SCHEME("sercomm.demeter.storage.scheme"),
+    SERCOMM_DEMETER_API_KEY("sercomm.demeter.api.key");
     
     private static Map<String, SystemProperty> map = 
             new ConcurrentHashMap<String, SystemProperty>();

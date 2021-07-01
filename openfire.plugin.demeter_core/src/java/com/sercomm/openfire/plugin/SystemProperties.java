@@ -1,6 +1,7 @@
 package com.sercomm.openfire.plugin;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.PropertyEventListener;
@@ -20,6 +21,7 @@ public class SystemProperties implements PropertyEventListener
     private Host hostDeviceEntry;
     private Storage storage;
     private String storageScheme;
+    private String apiKey;
 
     private final static class SystemPropertiesContainer
     {
@@ -29,6 +31,7 @@ public class SystemProperties implements PropertyEventListener
     private final static Host DEFAULT_HOST_SERVICE_API = new Host();
     private final static Host DEFAULT_HOST_DEVICE_ENTRY = new Host();
     private final static Storage DEFAULT_STORAGE = new Storage();
+    private final static String DEFAULT_API_KEY = new String(UUID.randomUUID().toString());
     static 
     {
         // default endpoint address information for DSL devices
@@ -41,6 +44,7 @@ public class SystemProperties implements PropertyEventListener
         DEFAULT_STORAGE.storageType = StorageType.LOCAL_FS;
         DEFAULT_STORAGE.rootPath = "/opt/demeter/";
         DEFAULT_STORAGE.credential = XStringUtil.BLANK;
+
         try
         {
             SystemPropertiesContainer.instance.loadProperties();
@@ -82,6 +86,11 @@ public class SystemProperties implements PropertyEventListener
     {
         return this.storageScheme;
     }
+    
+    public String getApiKey()
+    {
+        return this.apiKey;
+    }
 
     private void loadProperties()
     throws Throwable
@@ -94,11 +103,14 @@ public class SystemProperties implements PropertyEventListener
             SystemProperty.SERCOMM_DEMETER_STORAGE.toString(), Json.build(DEFAULT_STORAGE));
         String storageScheme = JiveGlobals.getProperty(
             SystemProperty.SERCOMM_DEMETER_STORAGE_SCHEME.toString(), "http");
+        String apiKey = JiveGlobals.getProperty(
+            SystemProperty.SERCOMM_DEMETER_API_KEY.toString(), DEFAULT_API_KEY);
         
         this.hostServiceAPI = Json.mapper().readValue(hostServiceAPIString, Host.class);
         this.hostDeviceEntry = Json.mapper().readValue(hostDeviceEntryString, Host.class);
         this.storage = Json.mapper().readValue(storageString, Storage.class);
         this.storageScheme = storageScheme;
+        this.apiKey = apiKey;
     }
 
     private void saveProperties()
@@ -112,6 +124,8 @@ public class SystemProperties implements PropertyEventListener
             SystemProperty.SERCOMM_DEMETER_STORAGE.toString(), Json.build(this.storage));
         JiveGlobals.setProperty(
             SystemProperty.SERCOMM_DEMETER_STORAGE_SCHEME.toString(), this.storageScheme);
+        JiveGlobals.setProperty(
+            SystemProperty.SERCOMM_DEMETER_API_KEY.toString(), this.apiKey);
     }
     
     @Override
