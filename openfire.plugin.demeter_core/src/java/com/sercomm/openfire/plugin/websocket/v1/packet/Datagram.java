@@ -116,7 +116,7 @@ public class Datagram implements Serializable
         if(null == element ||
            0 != DeviceComponent.ELM_ROOT.compareTo(element.getName()))
         {
-            throw new DemeterException("NO ROOT ELEMENT AVAILABLE: " + stanza.toXML());
+            throw new DemeterException("NO ROOT ELEMENT AVAILABLE: " + Json.xmlToJson(stanza.toXML()));
         }
 
         String idString = stanza.getID();
@@ -127,7 +127,7 @@ public class Datagram implements Serializable
            XStringUtil.isBlank(typeString) ||
            XStringUtil.isBlank(functionString))
         {
-            throw new DemeterException("ID/TYPE/FUNCTION IS BLANK: " + stanza.toXML());
+            throw new DemeterException("ID/TYPE/FUNCTION IS BLANK: " + Json.xmlToJson(stanza.toXML()));
         }
 
         Datagram datagram = Datagram.make(
@@ -152,7 +152,7 @@ public class Datagram implements Serializable
         }
         catch(Throwable t)
         {
-            throw new DemeterException("INVALID ARGUMENTS FORMAT: " + stanza.toXML());
+            throw new DemeterException("INVALID ARGUMENTS FORMAT: " + Json.xmlToJson(stanza.toXML()));
         }
 
         return datagram;

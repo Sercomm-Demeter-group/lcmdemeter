@@ -74,7 +74,7 @@ public class WebSocketConnection extends VirtualConnection
         // to deliver to device
         if(false == (packet instanceof IQ))
         {
-            log.error("ONLY IQ STANZA IS ALLOWED FOR THIS SESSION: " + packet.toXML());
+            log.error("ONLY IQ STANZA IS ALLOWED FOR THIS SESSION: " + Json.xmlToJson(packet.toXML()));
             return;
         }
         
