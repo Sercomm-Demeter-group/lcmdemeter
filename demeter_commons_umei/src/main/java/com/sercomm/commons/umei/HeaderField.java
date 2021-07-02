@@ -8,4 +8,5 @@ public class HeaderField
     public final static String HEADER_CREATION_TIME = "X-Creation-Time";
     public final static String HEADER_EXPIRATION_TIME = "X-Expiration-Time";
     public final static String HEADER_MESSAGE_TYPE = "X-Message-Type";
+    public final static String HEADER_REQUEST_TYPE = "X-Request-Type";
 }
