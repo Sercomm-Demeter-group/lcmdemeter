@@ -4,15 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.Collection;
 import java.util.Map;
+import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+
 
 public class Json
 {
     private static final ObjectMapper mapper;
+    private static final XmlMapper xmlMapper = new XmlMapper();
     
     static {
         mapper = new ObjectMapper();
@@ -22,6 +26,21 @@ public class Json
     public static ObjectMapper mapper()
     {
         return mapper;
+    }
+
+    public static XmlMapper xmlMapper()
+    {
+        return xmlMapper;
+    }
+
+    public static String xmlToJson(String xml)
+    {
+        try {
+            return mapper().writeValueAsString(xmlMapper().readTree(xml));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     public static String build(Object object)
