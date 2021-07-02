@@ -43,6 +43,7 @@ public class InstallAppAPI
     public Response execute(
             @HeaderParam(HeaderField.HEADER_REQUEST_ID) String requestId,
             @HeaderParam(HeaderField.HEADER_ORIGINATOR_ID) String originatorId,
+            @HeaderParam(HeaderField.HEADER_REQUEST_TYPE) String requestType,
             @PathParam("nodeName") String nodeName,
             String requestPayload) 
     throws UMEiException, InternalErrorException
@@ -97,7 +98,7 @@ public class InstallAppAPI
             catch(Throwable ignored)
             {
                 status = Response.Status.BAD_REQUEST;
-                errorMessage = "INALID REQUEST PAYLOAD: " + requestPayload;
+                errorMessage = "INVALID REQUEST PAYLOAD: " + requestPayload;
 
                 throw new UMEiException(
                     errorMessage,
@@ -111,6 +112,14 @@ public class InstallAppAPI
                 status = Response.Status.BAD_REQUEST;
                 errorMessage = "MANDATORY ARGUMENT CANNOT BE BLANK";
 
+                throw new UMEiException(
+                    errorMessage,
+                    status);
+            }
+            if(null != requestType && !requestType.equals("async"))
+            {
+                status = Response.Status.BAD_REQUEST;
+                errorMessage = "INVALID X-Request-Type PAYLOAD";
                 throw new UMEiException(
                     errorMessage,
                     status);
@@ -133,37 +142,45 @@ public class InstallAppAPI
             {
                 throw new UMEiException(e.getMessage(), Status.FORBIDDEN);
             }
-            
-            while(false == monitor.timeout &&
-                  false == monitor.failed &&
-                  false == monitor.completed)
+            BodyPayload bodyPayload = null;
+            if(null == requestType)
             {
-                Thread.sleep(100L);
+                while(false == monitor.timeout &&
+                      false == monitor.failed &&
+                      false == monitor.completed)
+                {
+                    Thread.sleep(100L);
+                }
+                
+                if(true == monitor.timeout)
+                {
+                    status = Response.Status.REQUEST_TIMEOUT;
+                    errorMessage = "DEVICE CANNOT INSTALL APP CAUSED BY INSTALLATION TIMEOUT";
+
+                    throw new UMEiException(
+                        errorMessage,
+                        status);
+                }
+                
+                if(true == monitor.failed)
+                {
+                    status = Response.Status.NOT_ACCEPTABLE;
+                    errorMessage = "INSTALLATION ERROR: " + monitor.failedMessage;
+
+                    throw new UMEiException(
+                        errorMessage,
+                        status);
+                }
+                bodyPayload = new BodyPayload()
+                        .withMeta(null)
+                        .withData(null);
             }
-            
-            if(true == monitor.timeout)
+            else if(null != requestType && requestType.equals("async"))
             {
-                status = Response.Status.REQUEST_TIMEOUT;
-                errorMessage = "DEVICE CANNOT INSTALL APP CAUSED BY INSTALLATION TIMEOUT";
-
-                throw new UMEiException(
-                    errorMessage,
-                    status);
+                bodyPayload = new BodyPayload()
+                        .withMeta(null)
+                        .withData("APP INSTALL COMMAND: SENT");
             }
-            
-            if(true == monitor.failed)
-            {
-                status = Response.Status.NOT_ACCEPTABLE;
-                errorMessage = "INSTALLATION ERROR: " + monitor.failedMessage;
-
-                throw new UMEiException(
-                    errorMessage,
-                    status);
-            }
-
-            BodyPayload bodyPayload = new BodyPayload()
-                    .withMeta(null)
-                    .withData(null);
 
             // monitor.completed = true
             response = Response
