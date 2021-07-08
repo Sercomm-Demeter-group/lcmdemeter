@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -17,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,14 @@ import com.sercomm.openfire.plugin.profile.Profile;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.util.IpkUtil;
 import com.sercomm.openfire.plugin.util.StorageUtil;
+import com.sercomm.openfire.plugin.define.StorageType;
+
+import io.minio.MinioClient;
+import io.minio.DownloadObjectArgs;
+import io.minio.errors.MinioException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 
 @Path(FileAPI.URI_PATH)
 public class FileAPI extends ServiceAPIBase
@@ -95,6 +105,9 @@ public class FileAPI extends ServiceAPIBase
             @PathParam("filename") String filename)
     {
         Response response = null;
+        boolean tmp_file_created = false;
+        String tmp_file_name = null;
+
 
         String errorMessage = XStringUtil.BLANK;
         try
@@ -103,6 +116,11 @@ public class FileAPI extends ServiceAPIBase
                XStringUtil.isBlank(filename))
             {
                 throw new DemeterException("ARGUMENT(S) CANNOT BE BLANK");
+            }
+
+            final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+            if(! (storage_type == StorageType.LOCAL_FS || storage_type == StorageType.AWS_S3) ){
+                throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
             }
             
             do
@@ -116,39 +134,105 @@ public class FileAPI extends ServiceAPIBase
                 
                 if(filename.endsWith("gz"))
                 {
+                    java.nio.file.Path packageInfoFilePath;
                     // package info. file
                     App app = AppManager.getInstance().getApp(appVersion.getAppId());
-                    String folderPathString = StorageUtil.Path.makePackageFolderPath(
-                        SystemProperties.getInstance().getStorage().getRootPath(), 
-                        app.getId(), 
-                        versionId);
 
-                    String packageInfoFilePathString = folderPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME;
-                    java.nio.file.Path packageInfoFilePath = Paths.get(packageInfoFilePathString);
-                    if(false == Files.exists(packageInfoFilePath))
-                    {
-                        response = Response.noContent().build();
-                        break;
+                    if(storage_type == StorageType.LOCAL_FS){
+
+                        String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+                        if(FSRootPathString.endsWith(File.separator) == false){
+                            FSRootPathString = FSRootPathString.concat(File.separator);
+                        }
+
+                        String packageInfoFilePathString = 
+                            FSRootPathString +
+                            app.getId() +
+                            File.separator +
+                            versionId +
+                            File.separator +
+                            IpkUtil.PACKAGE_GZ_FILENAME;
+
+                        packageInfoFilePath = Paths.get(packageInfoFilePathString);
+                        if(false == Files.exists(packageInfoFilePath))
+                        {
+                            response = Response.noContent().build();
+                            break;
+                        }
+
+                    } else {
+
+                        final String cloud_obj_name =
+                            app.getId() +
+                            File.separator +
+                            versionId +
+                            File.separator +
+                            IpkUtil.PACKAGE_GZ_FILENAME;
+                        try{
+                            java.nio.file.Path path = Files.createTempFile(null, UUID.randomUUID().toString()+".gz");
+                            tmp_file_name = path.toAbsolutePath().toString();
+                            tmp_file_created = true;
+                            LoadFileFromCloud(tmp_file_name, cloud_obj_name);
+                        }
+                        catch(IOException e){
+                            throw new DemeterException("CANNOT CREATE TEMPORARY FILE: " +
+                                tmp_file_name +
+                                " Message: " +
+                                e.getMessage());
+                        }
+                        
+                        packageInfoFilePath = Paths.get(tmp_file_name);
                     }
-                    
-                    response = Response.ok(new FileStreamingOutput(packageInfoFilePath))
+
+                    response = Response.ok(new FileStreamingOutput(packageInfoFilePath, tmp_file_created))
                             .header(HttpUtil.HEADER_CONTEXT_DISPOS, String.format("attachment; filename=\"%s\"", IpkUtil.PACKAGE_GZ_FILENAME))
                             .build();
+
+                    tmp_file_created = false;
                 }
                 else if(filename.endsWith("ipk"))
                 {
                     // IPK file
-                    String ipkFilePathString = appVersion.getIPKFilePath();
-                    java.nio.file.Path ipkFilePath = Paths.get(ipkFilePathString);
-                    if(false == Files.exists(ipkFilePath))
-                    {
-                        response = Response.noContent().build();
-                        break;
+                    java.nio.file.Path ipkFilePath;
+
+                    if(storage_type == StorageType.LOCAL_FS){
+
+                        String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+                        if(FSRootPathString.endsWith(File.separator) == false){
+                            FSRootPathString = FSRootPathString.concat(File.separator);
+                        }
+                        ipkFilePath = Paths.get(FSRootPathString + appVersion.getIPKFilePath());
+                        if(false == Files.exists(ipkFilePath))
+                        {
+                            response = Response.noContent().build();
+                            break;
+                        }
+
+                    } else {
+
+                        final String cloud_obj_name = appVersion.getIPKFilePath();
+                        try{
+                            java.nio.file.Path path = Files.createTempFile(null, UUID.randomUUID().toString()+".ipk");
+                            tmp_file_name = path.toAbsolutePath().toString();
+                            tmp_file_created = true;
+                            LoadFileFromCloud(tmp_file_name, cloud_obj_name);
+                        }
+                        catch(IOException e){
+                            throw new DemeterException("CANNOT CREATE TEMPORARY FILE: " +
+                                tmp_file_name +
+                                " Message: " +
+                                e.getMessage());
+                        }
+                        
+                        ipkFilePath = Paths.get(tmp_file_name);
+
                     }
                     
-                    response = Response.ok(new FileStreamingOutput(ipkFilePath))
-                            .header(HttpUtil.HEADER_CONTEXT_DISPOS, String.format("attachment; filename=\"%s\"", filename))
-                            .build();
+                    response = Response.ok(new FileStreamingOutput(ipkFilePath, tmp_file_created))
+                        .header(HttpUtil.HEADER_CONTEXT_DISPOS, String.format("attachment; filename=\"%s\"", filename))
+                        .build();
+                    
+                    tmp_file_created = false;
                 }
             }
             while(false);
@@ -169,7 +253,14 @@ public class FileAPI extends ServiceAPIBase
                 Status.INTERNAL_SERVER_ERROR,
                 "INTERNAL SERVER ERROR",
                 errorMessage);
-        }        
+        }
+        finally{
+            if(tmp_file_created && tmp_file_name != null){
+                try{
+                    FileUtils.forceDelete(new File(tmp_file_name));
+                }catch (IOException ignored){}
+            }
+        }
         
         log.info("({},{})={}",
             versionId,
@@ -259,13 +350,59 @@ public class FileAPI extends ServiceAPIBase
         return response;
     }
 
+
+    private static void LoadFileFromCloud(final String target_filename, final String cloud_object_name)
+    throws DemeterException, IOException
+    {
+
+        final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
+
+        try {
+
+            MinioClient minioClient =
+                MinioClient.builder()
+                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+                .credentials(
+                    SystemProperties.getInstance().getStorage().getAwsKey(),
+                    SystemProperties.getInstance().getStorage().getAwsSecret())
+                .build();
+   
+            minioClient.downloadObject(
+                DownloadObjectArgs.builder()
+                .bucket(bucket_name)
+                .object(cloud_object_name)
+                .filename(target_filename)
+                .build());
+        
+        }
+        catch (MinioException e) {
+            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+        }
+        catch (InvalidKeyException e) {
+            throw new DemeterException("Minio exception: " + e);
+        }
+        catch (NoSuchAlgorithmException e){
+            throw new DemeterException("Minio exception: " + e);
+        }
+
+    }
+
+
     public static class FileStreamingOutput implements StreamingOutput 
     {
         private final java.nio.file.Path ipkFilePath;
+        private boolean del_file;
         
-        public FileStreamingOutput(java.nio.file.Path ipkFilePath)
+        public FileStreamingOutput(java.nio.file.Path ipkFilePath, boolean del_after_use)
         {
             this.ipkFilePath = ipkFilePath;
+            this.del_file = del_after_use;
+        }
+
+        private void delete_file()
+        throws IOException
+        {
+            FileUtils.forceDelete(new File(ipkFilePath.toString()));
         }
         
         @Override
@@ -286,6 +423,11 @@ public class FileAPI extends ServiceAPIBase
             catch(Throwable t) 
             {  
                 log.error(t.getMessage(), t); 
+            }
+            finally{
+                if(del_file){
+                    delete_file();
+                }
             }
         }
     }

@@ -44,6 +44,10 @@ public class SystemProperties implements PropertyEventListener
         DEFAULT_STORAGE.storageType = StorageType.LOCAL_FS;
         DEFAULT_STORAGE.rootPath = "/opt/demeter/";
         DEFAULT_STORAGE.credential = XStringUtil.BLANK;
+        DEFAULT_STORAGE.awsUrl = "";
+        DEFAULT_STORAGE.awsKey = "";
+        DEFAULT_STORAGE.awsSecret = "";
+        DEFAULT_STORAGE.awsBucket = "";
 
         try
         {
@@ -191,6 +195,10 @@ public class SystemProperties implements PropertyEventListener
         private StorageType storageType;
         private String rootPath;
         private String credential;
+        private String awsUrl;
+        private String awsKey;
+        private String awsSecret;
+        private String awsBucket;
 
         public StorageType getStorageType()
         {
@@ -205,6 +213,22 @@ public class SystemProperties implements PropertyEventListener
         public String getCredential()
         {
             return this.credential;
-        }        
+        }
+        public String getAwsUrl()
+        {
+            return this.awsUrl;
+        }
+        public String getAwsKey()
+        {
+            return this.awsKey;
+        }
+        public String getAwsSecret()
+        {
+            return this.awsSecret;
+        }
+        public String getAwsBucket()
+        {
+            return this.awsBucket;
+        }
     }
 }

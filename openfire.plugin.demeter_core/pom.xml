@@ -18,6 +18,11 @@
         </developer>
     </developers>
 
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
     <!-- Where we obtain dependencies. -->
     <repositories>
         <repository>
@@ -141,6 +146,11 @@
             <groupId>com.sercomm.demeter</groupId>
             <artifactId>demeter-c2c-client</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.2.2</version>
         </dependency>
     </dependencies>
 </project>
