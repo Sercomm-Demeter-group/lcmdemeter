@@ -18,6 +18,11 @@
         </developer>
     </developers>
 
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
     <!-- Where we obtain dependencies. -->
     <repositories>
         <repository>
@@ -82,5 +87,10 @@
     		<artifactId>commons-csv</artifactId>
     		<version>1.8</version>
 		</dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.2.2</version>
+        </dependency>
     </dependencies>
 </project>

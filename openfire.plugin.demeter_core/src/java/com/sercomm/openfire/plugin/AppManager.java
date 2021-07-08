@@ -29,9 +29,28 @@ import com.sercomm.openfire.plugin.exception.DemeterException;
 import com.sercomm.openfire.plugin.util.DbConnectionUtil;
 import com.sercomm.openfire.plugin.util.IpkUtil;
 import com.sercomm.openfire.plugin.util.StorageUtil;
+import com.sercomm.openfire.plugin.define.StorageType;
+
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.UploadObjectArgs;
+import io.minio.RemoveObjectArgs;
+import io.minio.ListObjectsArgs;
+import io.minio.Result;
+import io.minio.messages.Item;
+import io.minio.errors.MinioException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class AppManager extends ManagerBase 
 {
+    //private static final Logger log = LoggerFactory.getLogger(AppManager.class);
+    
     private final static String TABLE_S_APP = "sApp";
     private final static String TABLE_S_APP_ICON = "sAppIcon";
     private final static String TABLE_S_APP_VERSION = "sAppVersion";
@@ -143,6 +162,200 @@ public class AppManager extends ManagerBase
     protected void onUninitialize()
     {
     }
+
+    
+    public class CloudObj{
+        public CloudObj (String fname, String obj_name) {
+            filename = fname;
+            object_name = obj_name;
+        }
+        public String filename;
+        public String object_name;
+    }
+
+    public void SaveFileToCloud(
+        String filepath,
+        String object_name)
+    throws DemeterException
+    {
+        List<CloudObj> objects = new ArrayList<CloudObj>();
+        objects.add(new CloudObj(filepath, object_name));
+        SaveFilesToCloud(objects);
+    }
+
+
+    public void SaveFilesToCloud(
+        Iterable<CloudObj> objects)
+    throws DemeterException
+    {
+
+        int saved_num = 0;
+        boolean err = true;
+        String err_string = "";
+
+        final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
+
+        try {
+            MinioClient minioClient =
+                MinioClient.builder()
+                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+                .credentials(
+                    SystemProperties.getInstance().getStorage().getAwsKey(),
+                    SystemProperties.getInstance().getStorage().getAwsSecret())
+                .build();
+
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket_name).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket_name).build());
+            }
+
+            for(CloudObj obj : objects){
+                minioClient.uploadObject(
+                    UploadObjectArgs.builder()
+                    .bucket(bucket_name)
+                    .object(obj.object_name)
+                    .filename(obj.filename)
+                    .build());
+                saved_num++;
+            }
+
+            err = false;
+        }
+        catch (MinioException e) {
+            err_string = "Minio exception: " + e + "    HTTP trace: " + e.httpTrace();
+        }
+        catch (InvalidKeyException e) {
+            err_string = "Minio exception: " + e;
+        }
+        catch (NoSuchAlgorithmException e){
+            err_string = "Minio exception: " + e;
+        }
+        catch(IOException e){
+            err_string = "IOException: " + e;
+        }
+
+        if(err){
+
+            List<String> obj_names = new ArrayList<String>();
+            int i = 0;
+            for(CloudObj obj : objects){
+                if(i == saved_num)
+                    break;
+                obj_names.add(obj.object_name);
+            }
+            RemoveObjectsFromCloud(obj_names);
+
+            throw new DemeterException(err_string);
+        }
+
+    }
+
+
+    public void RemoveObjectFromCloud(
+            String object_name)
+    throws DemeterException
+    {
+        List<String> list = new ArrayList<String>();
+        list.add(object_name);
+        RemoveObjectsFromCloud(list);
+    }
+
+
+    public void RemoveObjectsFromCloud(
+            Iterable<String> objects)
+    throws DemeterException
+    {
+
+        final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
+
+         try {
+
+            MinioClient minioClient =
+                MinioClient.builder()
+                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+                .credentials(
+                    SystemProperties.getInstance().getStorage().getAwsKey(),
+                    SystemProperties.getInstance().getStorage().getAwsSecret())
+                .build();
+       
+            for(String obj : objects){
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucket_name)
+                    .object(obj).build());
+            }
+            
+        }
+        catch (MinioException e) {
+            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+        }
+        catch (InvalidKeyException e) {
+            throw new DemeterException("Minio exception: " + e);
+        }
+        catch (NoSuchAlgorithmException e){
+            throw new DemeterException("Minio exception: " + e);
+        }
+        catch(IOException e){
+            throw new DemeterException("IOException: " + e);
+        }
+
+    }
+
+
+    public void RemoveFolderFromCloud(
+            String folder_name)
+    throws DemeterException
+    {
+        
+        if(folder_name.length() == 0){
+            return;
+        }
+
+        if(false == folder_name.endsWith(File.separator)){
+            folder_name = folder_name.concat(File.separator);
+        }
+
+         try {
+
+            final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
+
+            MinioClient minioClient =
+                MinioClient.builder()
+                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+                .credentials(
+                    SystemProperties.getInstance().getStorage().getAwsKey(),
+                    SystemProperties.getInstance().getStorage().getAwsSecret())
+                .build();
+
+
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                ListObjectsArgs.builder()
+                .bucket(bucket_name)
+                .prefix(folder_name)
+                .build());
+        
+            for (Result<Item> result : results) {
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucket_name)
+                    .object(result.get().objectName())
+                    .build());
+            }
+        
+        }
+        catch (MinioException e) {
+            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+        }
+        catch (InvalidKeyException e) {
+            throw new DemeterException("Minio exception: " + e);
+        }
+        catch (NoSuchAlgorithmException e){
+            throw new DemeterException("Minio exception: " + e);
+        }
+        catch(IOException e){
+            throw new DemeterException("Minio exception: " + e);
+        }
+
+    }
+    
  
     public void addApp(
             String publisher,
@@ -536,23 +749,28 @@ public class AppManager extends ManagerBase
         
         // delete its physical files
         if(false == abort)
-        {            
-            if(false == appVersions.isEmpty())
-            {
-                for(AppVersion appVersion : appVersions)
+        {
+
+            final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+
+            if(storage_type == StorageType.LOCAL_FS){
+
+                if(false == appVersions.isEmpty())
                 {
-                    String versionId = appVersion.getVersion();
-                    
-                    String folderPath = StorageUtil.Path.makePackageFolderPath(
-                        SystemProperties.getInstance().getStorage().getRootPath(), appId, versionId);
-                
+                    StringBuilder sb = new StringBuilder(SystemProperties.getInstance().getStorage().getRootPath());
+                    if(sb.toString().endsWith(File.separator) == false){
+                        sb.append(File.separator);
+                    }
+                    sb.append(appId);
+
                     try
                     {
-                        FileUtils.forceDelete(new File(folderPath));
+                        FileUtils.forceDelete(new File(sb.toString()));
                     }
                     catch(Throwable ignored) {}
-                    
+
                 }
+
             }
         }
     }
@@ -579,9 +797,28 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, versionId);
             stmt.executeUpdate();
             
-            // delete the package's folder from volume
-            File ipkFile = new File(appVersion.getIPKFilePath());
-            FileUtils.forceDelete(ipkFile.getParentFile());
+            final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+
+            if(storage_type == StorageType.LOCAL_FS){
+
+                // delete the package's folder from volume
+                File ipkFile = new File(
+                     SystemProperties.getInstance().getStorage().getRootPath() +
+                     File.separator +
+                     appVersion.getIPKFilePath());
+                
+                FileUtils.forceDelete(ipkFile.getParentFile());
+
+            } else if(storage_type == StorageType.AWS_S3){
+
+                File ipkFile = new File(appVersion.getIPKFilePath());
+                RemoveFolderFromCloud(ipkFile.getParentFile().toString());
+
+            } else {
+
+                throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+
+            }
 
             abortTransaction = false;
         }
@@ -686,7 +923,8 @@ public class AppManager extends ManagerBase
 
         if(XStringUtil.isBlank(versionName))
         {
-            throw new DemeterException("VERSION NAME CANNOT BE BLANK");
+            //throw new DemeterException("VERSION NAME CANNOT BE BLANK");
+            versionName = "blablabla_" + String.valueOf(System.currentTimeMillis());
         }
         
         // create temporary folder
@@ -767,19 +1005,19 @@ public class AppManager extends ManagerBase
                     throw new DemeterException("APP VERSION ALREADY EXISTS");
                 }
             }
+
+            final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
             
-            final String packageFolderPathString = StorageUtil.Path.makePackageFolderPath(
-                SystemProperties.getInstance().getStorage().getRootPath(), 
-                app.getId(), 
-                versionId);
-            
-            final Path packageFolderPath =
-                    Paths.get(packageFolderPathString);
-            final Path ipkFilePath = 
-                    Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_IPK_FILENAME);
-            final Path packageInfoFilePath = 
-                    Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME);
-            
+            final String VersionPathString = app.getId() + File.separator + versionId;
+            String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+            if(FSRootPathString.endsWith(File.separator) == false){
+                FSRootPathString = FSRootPathString.concat(File.separator);
+            }
+
+            final String ipkFilePathString = VersionPathString + File.separator + IpkUtil.PACKAGE_IPK_FILENAME;
+            final String packageInfoFilePathString = VersionPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME;
+
+           
             // 1. establish database records 
             // 2. move files
             boolean abortTransaction = true;
@@ -799,7 +1037,7 @@ public class AppManager extends ManagerBase
                 stmt.setInt(++idx, status);
                 stmt.setString(++idx, ipkFileName);
                 stmt.setLong(++idx, creationTime);
-                stmt.setString(++idx, ipkFilePath.toAbsolutePath().toString());
+                stmt.setString(++idx, ipkFilePathString);
                 stmt.setLong(++idx, ipkFileData.length);
                 stmt.setString(++idx, description);
                 stmt.executeUpdate();
@@ -810,45 +1048,72 @@ public class AppManager extends ManagerBase
                 boolean moved = false;
                 try
                 {
-                    try
-                    {
-                        // check if the package folder exists
-                        if(false == Files.exists(packageFolderPath))
+                    if(storage_type == StorageType.LOCAL_FS){
+
+                        final Path packageFolderPath = Paths.get(FSRootPathString + VersionPathString);
+                        final Path ipkFilePath = Paths.get(FSRootPathString + ipkFilePathString);
+                        final Path packageInfoFilePath = Paths.get(FSRootPathString + packageInfoFilePathString);
+                    
+                        try
                         {
-                            Files.createDirectories(packageFolderPath);
+                            // check if the package folder exists
+                            if(false == Files.exists(packageFolderPath))
+                            {
+                                Files.createDirectories(packageFolderPath.toAbsolutePath());
+                            }
                         }
-                    }
-                    catch(IOException e)
-                    {
-                        throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                        catch(IOException e)
+                        {
+                            throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                        }
+
+                        try
+                        {
+                            // move IPK file
+                            Files.move(tempIPKFilePath, ipkFilePath);
+                            // move package info. file
+                            Files.move(tempPackageInfoFilePath, packageInfoFilePath);
+
+                        }
+                        catch(IOException e)
+                        {
+                            throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
+                        }
+                    
+                    } else if(storage_type == StorageType.AWS_S3){
+
+                        List<CloudObj> objects = new ArrayList<CloudObj>();
+                        objects.add(new CloudObj(tempIPKFilePath.toString(), ipkFilePathString));
+                        objects.add(new CloudObj(tempPackageInfoFilePath.toString(), packageInfoFilePathString));
+                        SaveFilesToCloud(objects);
+
+                    } else {
+
+                        throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+
                     }
 
-                    try
-                    {
-                        // move IPK file
-                        Files.move(tempIPKFilePath, ipkFilePath);
-                        // move package info. file
-                        Files.move(tempPackageInfoFilePath, packageInfoFilePath);
-                    }
-                    catch(IOException e)
-                    {
-                        throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
-                    }
+                    moved = true;                 
                     
-                    moved = true;
                 }
                 finally
                 {
+                    
                     // fallback
                     if(false == moved)
                     {
-                        // catch surrounded since the folder path might not be created yet
-                        try
-                        {
-                            FileUtils.forceDelete(packageFolderPath.toFile());
-                        }
-                        catch(Throwable ignored) {}
+                        if(storage_type == StorageType.LOCAL_FS){
+
+                            // catch surrounded since the folder path might not be created yet
+                            try
+                            {
+                                final Path VPath = Paths.get(FSRootPathString + VersionPathString);
+                                FileUtils.forceDelete(VPath.toFile());
+                            }
+                            catch(Throwable ignored) {}
+                            }
                     }
+                    
                 }
 
                 abortTransaction = false;
@@ -955,46 +1220,67 @@ public class AppManager extends ManagerBase
                 final Path tempPackageInfoFilePath =
                         Paths.get(tempFolder.toAbsolutePath().toString() + File.separator + IpkUtil.PACKAGE_GZ_FILENAME);
                 
-                final String packageFolderPathString = StorageUtil.Path.makePackageFolderPath(
-                    SystemProperties.getInstance().getStorage().getRootPath(), 
-                    appVersion.getAppId(), 
-                    versionId);
-                
-                final Path packageFolderPath =
-                        Paths.get(packageFolderPathString);
-                final Path ipkFilePath = 
-                        Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_IPK_FILENAME);
-                final Path packageInfoFilePath = 
-                        Paths.get(packageFolderPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME);
-                
-                try
-                {
-                    // check if the package folder exists
-                    if(Files.exists(packageFolderPath))
+                String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+                if(FSRootPathString.endsWith(File.separator) == false){
+                    FSRootPathString = FSRootPathString.concat(File.separator);
+                }
+
+                final String VersionPathString = app.getId() + File.separator + versionId;
+
+                final String ipkFilePathString = VersionPathString + File.separator + IpkUtil.PACKAGE_IPK_FILENAME;
+                final String packageInfoFilePathString = VersionPathString + File.separator + IpkUtil.PACKAGE_GZ_FILENAME;
+
+                final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+            
+                if(storage_type == StorageType.LOCAL_FS){
+
+                    final Path packageFolderPath = Paths.get(FSRootPathString + VersionPathString);
+                    final Path ipkFilePath = Paths.get(FSRootPathString + ipkFilePathString);
+                    final Path packageInfoFilePath = Paths.get(FSRootPathString + packageInfoFilePathString);
+                                    
+                    try
                     {
-                        // force delete the original folder
-                        FileUtils.forceDelete(packageFolderPath.toFile());
+                        // check if the package folder exists
+                        if(Files.exists(packageFolderPath))
+                        {
+                            // force delete the original folder
+                            FileUtils.forceDelete(packageFolderPath.toFile());
+                        }
+
+                        // re-create it
+                        Files.createDirectories(packageFolderPath);
+                    }
+                    catch(IOException e)
+                    {
+                        throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
                     }
 
-                    // re-create it
-                    Files.createDirectories(packageFolderPath);
-                }
-                catch(IOException e)
-                {
-                    throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
-                }
+                    try
+                    {
+                        // move IPK file
+                        Files.move(tempIPKFilePath, ipkFilePath);
+                        // move package info. file
+                        Files.move(tempPackageInfoFilePath, packageInfoFilePath);
+                    }
+                    catch(IOException e)
+                    {
+                        throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
+                    }
+    
+                } else if(storage_type == StorageType.AWS_S3){
 
-                try
-                {
-                    // move IPK file
-                    Files.move(tempIPKFilePath, ipkFilePath);
-                    // move package info. file
-                    Files.move(tempPackageInfoFilePath, packageInfoFilePath);
-                }
-                catch(IOException e)
-                {
-                    throw new IOException("FAILED TO MOVE IPK FILE TO VOLUME: " + e.getMessage());
-                }
+                    RemoveFolderFromCloud(VersionPathString);
+                    List<CloudObj> objects = new ArrayList<CloudObj>();
+                    objects.add(new CloudObj(tempIPKFilePath.toString(), ipkFilePathString));
+                    objects.add(new CloudObj(tempPackageInfoFilePath.toString(), packageInfoFilePathString));
+                    SaveFilesToCloud(objects);
+
+                 } else {
+
+                    throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+
+                }            
+                
             }
             finally
             {
@@ -1169,11 +1455,13 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, iconId);
             
             rs = stmt.executeQuery();
+            /*
             if(!rs.next())
             {
                 throw new DemeterException("APP ICON WAS NOT FOUND");
             }
             object = AppIcon.from(rs);
+            */
         }
         finally
         {
@@ -1201,11 +1489,13 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, appId);
             
             rs = stmt.executeQuery();
+            /*
             if(!rs.next())
             {
                 throw new DemeterException("APP ICON WAS NOT FOUND");
             }
             object = AppIcon.from(rs);
+            */
         }
         finally
         {
