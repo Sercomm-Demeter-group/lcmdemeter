@@ -98,7 +98,14 @@ public class ServiceAPIUtil
                 object.files.add(fileModel);
             }
             
-            AppIcon appIcon = AppManager.getInstance().getAppIconByAppId(app.getId());
+            AppIcon appIcon = null;
+            try
+            {
+                appIcon = AppManager.getInstance().getAppIconByAppId(app.getId());
+            }
+            // it will be fine if no icon presents
+            catch(Throwable ignored) {}
+
             if(null != appIcon)
             {
                 com.sercomm.openfire.plugin.service.dto.admin.File fileModel = 
