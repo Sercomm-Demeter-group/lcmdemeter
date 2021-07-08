@@ -160,7 +160,15 @@ public class DeviceModelsAPI extends ServiceAPIBase
                     builder.append("AND ");
                 }
             }
-            
+
+            if(null != from && null != size)
+            {
+                builder.append("LIMIT ")
+                .append(Integer.toString(from))
+                .append(",")
+                .append(Integer.toString(size));
+            }
+
             List<GetDeviceModelResult> result = null;
             try
             {
