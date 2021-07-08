@@ -22,8 +22,10 @@ public class ResourceFilter implements ContainerResponseFilter
         // instead of HTTP 204, response code is desired to be HTTP 404
         if(object == null)
         {
-            responseContext.setStatus(Response.Status.NOT_FOUND.getStatusCode());
+            if(responseContext.getStatus() == Response.Status.NO_CONTENT.getStatusCode())
+            {
+                responseContext.setStatus(Response.Status.NOT_FOUND.getStatusCode());
+            }
         }
     }
-    
 }
