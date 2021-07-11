@@ -106,7 +106,7 @@ public class AppVersionsAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`name` LIKE ? ");
+                        builder.append("`version` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     case "status":
@@ -181,7 +181,7 @@ public class AppVersionsAPI extends ServiceAPIBase
                 switch(tokens[0])
                 {
                     case "name":
-                        builder.append("`name` LIKE ? ");
+                        builder.append("`version` LIKE ? ");
                         arguments.add(tokens[1] + "%");
                         break;
                     case "status":
