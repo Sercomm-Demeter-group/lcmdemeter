@@ -286,7 +286,7 @@ public class AppVersionAPI extends ServiceAPIBase
                     name,
                     statusValue,
                     null != fdcd ? fdcd.getFileName() : XStringUtil.BLANK,
-                    bufferArray);
+                    0 != size ? bufferArray : null);
             }
             catch(DemeterException e)
             {
