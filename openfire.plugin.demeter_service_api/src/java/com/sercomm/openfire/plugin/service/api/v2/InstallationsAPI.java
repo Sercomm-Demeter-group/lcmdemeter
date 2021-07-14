@@ -25,13 +25,13 @@ import org.jivesoftware.database.DbConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sercomm.commons.id.NameRule;
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.Meta;
 import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.commons.util.XStringUtil;
-import com.sercomm.openfire.plugin.DeviceManager;
-import com.sercomm.openfire.plugin.cache.DeviceCache;
+import com.sercomm.openfire.plugin.AppManager;
+import com.sercomm.openfire.plugin.data.frontend.App;
+import com.sercomm.openfire.plugin.data.frontend.AppVersion;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
@@ -77,6 +77,9 @@ public class InstallationsAPI extends ServiceAPIBase
                 throw new UMEiException(errorMessage, status);
             }
 
+            App app = AppManager.getInstance().getApp(applicationId);
+            AppVersion version = AppManager.getInstance().getAppVersion(versionId);
+            
             InstallStatus installStatus = InstallStatus.fromString(statusValue);
             if(null == installStatus)
             {
@@ -148,15 +151,12 @@ public class InstallationsAPI extends ServiceAPIBase
                     String serial = rs.getString("serial");
                     String mac = rs.getString("mac");
 
-                    DeviceCache deviceCache =
-                    DeviceManager.getInstance().getDeviceCache(
-                        NameRule.formatDeviceName(serial, mac));
-
                     GetInstallationResult object = new GetInstallationResult();
                     object.setSerial(serial);
                     object.setMac(mac);
-                    object.setModel(deviceCache.getModelName());
-                    object.setFirmware(deviceCache.getFirmwareVersion());
+                    object.setApplication(app.getName());
+                    object.setVersion(version.getVersion());
+                    object.setStatus(Integer.parseInt(statusValue));
 
                     result.add(object);
                 }
@@ -245,7 +245,11 @@ public class InstallationsAPI extends ServiceAPIBase
     
                     throw new UMEiException(errorMessage, status);
                 }
-    
+
+                // validate application ID and version ID
+                AppManager.getInstance().getApp(applicationId);
+                AppManager.getInstance().getAppVersion(versionId);
+
                 InstallStatus installStatus = InstallStatus.fromString(statusValue);
                 if(null == installStatus)
                 {
@@ -641,8 +645,9 @@ public class InstallationsAPI extends ServiceAPIBase
     {
         private String serial;
         private String mac;
-        private String model;
-        private String firmware;
+        private String application;
+        private String version;
+        private Integer status;
 
         public String getSerial()
         {
@@ -660,21 +665,29 @@ public class InstallationsAPI extends ServiceAPIBase
         {
             this.mac = mac;
         }
-        public String getModel()
+        public String getApplication()
         {
-            return model;
+            return application;
         }
-        public void setModel(String model)
+        public void setApplication(String application)
         {
-            this.model = model;
+            this.application = application;
         }
-        public String getFirmware()
+        public String getVersion()
         {
-            return firmware;
+            return version;
         }
-        public void setFirmware(String firmware)
+        public void setVersion(String version)
         {
-            this.firmware = firmware;
+            this.version = version;
+        }
+        public Integer getStatus()
+        {
+            return status;
+        }
+        public void setStatus(Integer status)
+        {
+            this.status = status;
         }
     }
 }
