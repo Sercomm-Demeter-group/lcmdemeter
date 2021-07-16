@@ -148,6 +148,12 @@ public class AppManager extends ManagerBase
     private static class AppManagerContainer
     {
         private final static AppManager instance = new AppManager();
+        private final static MinioClient minio_instance = MinioClient.builder()
+            .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+            .credentials(
+                SystemProperties.getInstance().getStorage().getAwsKey(),
+                SystemProperties.getInstance().getStorage().getAwsSecret())
+            .build();
     }
     
     private AppManager()
@@ -157,6 +163,11 @@ public class AppManager extends ManagerBase
     public static AppManager getInstance()
     {
         return AppManagerContainer.instance;
+    }
+
+    public static MinioClient getMinioInstance()
+    {
+        return AppManagerContainer.minio_instance;
     }
 
     @Override
@@ -203,14 +214,7 @@ public class AppManager extends ManagerBase
         final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
 
         try {
-            MinioClient minioClient =
-                MinioClient.builder()
-                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
-                .credentials(
-                    SystemProperties.getInstance().getStorage().getAwsKey(),
-                    SystemProperties.getInstance().getStorage().getAwsSecret())
-                .build();
-
+            MinioClient minioClient = getMinioInstance();
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket_name).build());
             if (!found) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket_name).build());
@@ -283,14 +287,7 @@ public class AppManager extends ManagerBase
 
          try {
 
-            MinioClient minioClient =
-                MinioClient.builder()
-                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
-                .credentials(
-                    SystemProperties.getInstance().getStorage().getAwsKey(),
-                    SystemProperties.getInstance().getStorage().getAwsSecret())
-                .build();
-       
+            MinioClient minioClient = getMinioInstance();
             for(String obj : objects){
                 minioClient.removeObject(RemoveObjectArgs.builder()
                     .bucket(bucket_name)
@@ -331,14 +328,7 @@ public class AppManager extends ManagerBase
 
             final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
 
-            MinioClient minioClient =
-                MinioClient.builder()
-                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
-                .credentials(
-                    SystemProperties.getInstance().getStorage().getAwsKey(),
-                    SystemProperties.getInstance().getStorage().getAwsSecret())
-                .build();
-
+            MinioClient minioClient = getMinioInstance();
 
             Iterable<Result<Item>> results = minioClient.listObjects(
                 ListObjectsArgs.builder()

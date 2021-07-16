@@ -40,6 +40,7 @@ import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.util.IpkUtil;
 import com.sercomm.openfire.plugin.util.StorageUtil;
 import com.sercomm.openfire.plugin.define.StorageType;
+import com.sercomm.openfire.plugin.AppManager;
 
 import io.minio.MinioClient;
 import io.minio.DownloadObjectArgs;
@@ -359,14 +360,7 @@ public class FileAPI extends ServiceAPIBase
 
         try {
 
-            MinioClient minioClient =
-                MinioClient.builder()
-                .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
-                .credentials(
-                    SystemProperties.getInstance().getStorage().getAwsKey(),
-                    SystemProperties.getInstance().getStorage().getAwsSecret())
-                .build();
-   
+            MinioClient minioClient = AppManager.getMinioInstance();
             minioClient.downloadObject(
                 DownloadObjectArgs.builder()
                 .bucket(bucket_name)
