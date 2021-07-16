@@ -11,9 +11,12 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.jivesoftware.database.DbConnectionManager;
@@ -108,6 +111,9 @@ public class AppManager extends ManagerBase
     private final static String SQL_DELETE_APP_VERSION =
             String.format("DELETE FROM `%s` WHERE `appId`=? AND `id`=?",
                 TABLE_S_APP_VERSION);
+    private final static String SQL_QUERY_ALL_APP_VERSIONS =
+            String.format("SELECT * FROM `%s`",
+                TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP_ICON =
             String.format("SELECT * FROM `%s` WHERE `iconId`=?",
                 TABLE_S_APP_ICON);
@@ -164,7 +170,7 @@ public class AppManager extends ManagerBase
     }
 
     
-    public class CloudObj{
+    public static class CloudObj{
         public CloudObj (String fname, String obj_name) {
             filename = fname;
             object_name = obj_name;
@@ -180,12 +186,13 @@ public class AppManager extends ManagerBase
     {
         List<CloudObj> objects = new ArrayList<CloudObj>();
         objects.add(new CloudObj(filepath, object_name));
-        SaveFilesToCloud(objects);
+        SaveFilesToCloud(objects, false);
     }
 
 
-    public void SaveFilesToCloud(
-        Iterable<CloudObj> objects)
+    public static void SaveFilesToCloud(
+        Iterable<CloudObj> objects,
+        boolean ignore_errors_flag)
     throws DemeterException
     {
 
@@ -210,13 +217,19 @@ public class AppManager extends ManagerBase
             }
 
             for(CloudObj obj : objects){
-                minioClient.uploadObject(
-                    UploadObjectArgs.builder()
-                    .bucket(bucket_name)
-                    .object(obj.object_name)
-                    .filename(obj.filename)
-                    .build());
-                saved_num++;
+                try{
+                    minioClient.uploadObject(
+                        UploadObjectArgs.builder()
+                        .bucket(bucket_name)
+                        .object(obj.object_name)
+                        .filename(obj.filename)
+                        .build());
+                    saved_num++;
+                }
+                catch(Throwable e){
+                    if(ignore_errors_flag == false)
+                        throw e;
+                }
             }
 
             err = false;
@@ -234,7 +247,7 @@ public class AppManager extends ManagerBase
             err_string = "IOException: " + e;
         }
 
-        if(err){
+        if(err && !ignore_errors_flag){
 
             List<String> obj_names = new ArrayList<String>();
             int i = 0;
@@ -251,7 +264,7 @@ public class AppManager extends ManagerBase
     }
 
 
-    public void RemoveObjectFromCloud(
+    public static void RemoveObjectFromCloud(
             String object_name)
     throws DemeterException
     {
@@ -261,7 +274,7 @@ public class AppManager extends ManagerBase
     }
 
 
-    public void RemoveObjectsFromCloud(
+    public static void RemoveObjectsFromCloud(
             Iterable<String> objects)
     throws DemeterException
     {
@@ -301,7 +314,7 @@ public class AppManager extends ManagerBase
     }
 
 
-    public void RemoveFolderFromCloud(
+    public static void RemoveFolderFromCloud(
             String folder_name)
     throws DemeterException
     {
@@ -924,7 +937,8 @@ public class AppManager extends ManagerBase
         if(XStringUtil.isBlank(versionName))
         {
             //throw new DemeterException("VERSION NAME CANNOT BE BLANK");
-            versionName = "blablabla_" + String.valueOf(System.currentTimeMillis());
+            // !!! added temporary version name as there is no version here (due to a bug)
+            versionName = "version_" + String.valueOf(System.currentTimeMillis());
         }
         
         // create temporary folder
@@ -1085,7 +1099,7 @@ public class AppManager extends ManagerBase
                         List<CloudObj> objects = new ArrayList<CloudObj>();
                         objects.add(new CloudObj(tempIPKFilePath.toString(), ipkFilePathString));
                         objects.add(new CloudObj(tempPackageInfoFilePath.toString(), packageInfoFilePathString));
-                        SaveFilesToCloud(objects);
+                        SaveFilesToCloud(objects, false);
 
                     } else {
 
@@ -1273,7 +1287,7 @@ public class AppManager extends ManagerBase
                     List<CloudObj> objects = new ArrayList<CloudObj>();
                     objects.add(new CloudObj(tempIPKFilePath.toString(), ipkFilePathString));
                     objects.add(new CloudObj(tempPackageInfoFilePath.toString(), packageInfoFilePathString));
-                    SaveFilesToCloud(objects);
+                    SaveFilesToCloud(objects, false);
 
                  } else {
 
@@ -1715,4 +1729,104 @@ public class AppManager extends ManagerBase
 
         return  Algorithm.md5(buffer.array());        
     }
+
+
+    public static void exportAppsToCloud()
+    throws DemeterException, Throwable
+    {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        List<CloudObj> file_objs = new ArrayList<CloudObj>();
+
+        try
+        {
+            conn = DbConnectionManager.getConnection();
+            stmt = conn.prepareStatement(SQL_QUERY_ALL_APP_VERSIONS);
+            rs = stmt.executeQuery();
+            while(rs.next()){
+                AppVersion object = AppVersion.from(rs);
+                try{
+                    appendFileObjs(object.getIPKFilePath(), file_objs);
+                }
+                catch(Throwable ignored){}
+            }
+        }
+        catch(SQLException e){
+            throw new DemeterException("SQL exception: " + e.getMessage());
+        }
+        finally
+        {
+            DbConnectionManager.closeConnection(rs, stmt, conn);
+        }
+
+        try{
+            if(file_objs.size() > 0){
+                SaveFilesToCloud(file_objs, true);
+            }
+        }
+        catch(DemeterException ignored){};
+
+    }
+
+
+    private static void appendFileObjs(
+        String ipk_file_path,
+        List<CloudObj> objs)
+    throws Throwable
+    {
+        String root_path = "";
+        String file_path = "";
+
+        root_path = SystemProperties.getInstance().getStorage().getRootPath();
+        if(root_path.endsWith(File.separator) == false){
+            root_path = root_path.concat(File.separator);
+        }
+
+        if(ipk_file_path.startsWith(File.separator) == false){
+            file_path = root_path + ipk_file_path;
+        } else {
+            file_path = ipk_file_path;
+            if(file_path.startsWith(root_path) == false){
+                // system setting for root path do not match root path in DB entry
+                File path = new File(file_path);
+                root_path = path.getParentFile().getParentFile().getParentFile().toString();
+                if(root_path.endsWith(File.separator) == false){
+                    root_path = root_path.concat(File.separator);
+                }
+            }
+        }
+
+        //find parent (app version) folder
+        File ipkFile = new File(file_path);
+
+        //collect all file names in folder
+        List<String> all_files = null;
+
+        try (Stream<Path> walk = Files.walk(ipkFile.getParentFile().toPath())) {
+
+            all_files = walk.filter(Files::isRegularFile)
+                .filter(file -> !Files.isDirectory(file))
+                .map(x -> x.toString())
+                .collect(Collectors.toList());
+
+        } catch (IOException ignored) {}
+
+        String version_path = ipkFile.getParentFile().toString();
+        if(version_path.endsWith(File.separator) == false){
+            version_path = version_path.concat(File.separator);
+        }
+
+        // add object for each found file
+        if(all_files != null){
+
+            for(String file : all_files){
+                objs.add(new CloudObj(file, file.substring(root_path.length())));
+            }
+
+        }
+
+    }
+
 }
