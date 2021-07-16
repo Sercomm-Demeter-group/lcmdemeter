@@ -58,6 +58,8 @@ public class HttpServer
             resourceConfig.register(
                 com.sercomm.openfire.plugin.c2c.api.v1.PostEchoAPI.class);
             resourceConfig.register(
+                com.sercomm.openfire.plugin.c2c.api.v1.StorageExportAPI.class);
+            resourceConfig.register(
                 com.sercomm.openfire.plugin.c2c.api.v1.user.PostUserAPI.class);
             resourceConfig.register(
                 com.sercomm.openfire.plugin.c2c.api.v1.ubus.PostUbusAPI.class);
