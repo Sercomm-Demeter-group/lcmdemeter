@@ -129,6 +129,9 @@ public class AuthFilter implements ContainerRequestFilter
             }
 
             // authorize successfully
+            // update the session data for renewing its alive time
+            ServiceSessionManager.getInstance().updateSession(session);
+            // attach necessary data to the request context
             requestContext.setProperty("jwt", tokens[1]);
             requestContext.setProperty("sessionId", sessionId);
             requestContext.setProperty("userId", session.getUserId());
