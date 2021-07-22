@@ -42,6 +42,7 @@ import io.minio.RemoveObjectArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.Result;
 import io.minio.messages.Item;
+import okhttp3.HttpUrl;
 import io.minio.errors.MinioException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -148,8 +149,17 @@ public class AppManager extends ManagerBase
     private static class AppManagerContainer
     {
         private final static AppManager instance = new AppManager();
+
+        private final static HttpUrl minio_getUrl(){
+            HttpUrl url = HttpUrl.parse(SystemProperties.getInstance().getStorage().getAwsUrl());
+            return new HttpUrl.Builder()
+                .scheme(SystemProperties.getInstance().getStorageScheme())
+                .host(url.host())
+                .port(url.port())
+                .build();
+        }
         private final static MinioClient minio_instance = MinioClient.builder()
-            .endpoint(SystemProperties.getInstance().getStorage().getAwsUrl())
+            .endpoint(minio_getUrl())
             .credentials(
                 SystemProperties.getInstance().getStorage().getAwsKey(),
                 SystemProperties.getInstance().getStorage().getAwsSecret())
