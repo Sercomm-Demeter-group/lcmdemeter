@@ -48,6 +48,7 @@ public class SystemProperties implements PropertyEventListener
         DEFAULT_STORAGE.awsKey = "";
         DEFAULT_STORAGE.awsSecret = "";
         DEFAULT_STORAGE.awsBucket = "";
+        DEFAULT_STORAGE.awsScheme = "https";
 
         try
         {
@@ -199,6 +200,8 @@ public class SystemProperties implements PropertyEventListener
         private String awsKey;
         private String awsSecret;
         private String awsBucket;
+        private String awsScheme;
+
 
         public StorageType getStorageType()
         {
@@ -229,6 +232,10 @@ public class SystemProperties implements PropertyEventListener
         public String getAwsBucket()
         {
             return this.awsBucket;
+        }
+        public String getAwsScheme()
+        {
+            return this.awsScheme;
         }
     }
 }

@@ -82,6 +82,11 @@ public class AppManager extends ManagerBase
                     "`version`=?,`status`=?,`ipkFileSize`=? " +
                     "WHERE `id`=?",
                     TABLE_S_APP_VERSION);
+    private final static String SQL_UPDATE_APP_VERSION_PATH =
+            String.format("UPDATE `%s` SET " +
+                    "`ipkFilePath`=? " +
+                    "WHERE `id`=?",
+                    TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP =
             String.format("SELECT * FROM `%s` WHERE `id`=?",
                 TABLE_S_APP);
@@ -153,7 +158,7 @@ public class AppManager extends ManagerBase
         private final static HttpUrl minio_getUrl(){
             HttpUrl url = HttpUrl.parse(SystemProperties.getInstance().getStorage().getAwsUrl());
             return new HttpUrl.Builder()
-                .scheme(SystemProperties.getInstance().getStorageScheme())
+                .scheme(SystemProperties.getInstance().getStorage().getAwsScheme())
                 .host(url.host())
                 .port(url.port())
                 .build();
@@ -1740,6 +1745,17 @@ public class AppManager extends ManagerBase
 
         List<CloudObj> file_objs = new ArrayList<CloudObj>();
 
+        class update_item{
+            String id;
+            String path;
+            update_item(String _id, String _path){
+                id = _id;
+                path = _path;
+            }
+        };
+
+        List<update_item> update_app_versions = new ArrayList<update_item>();
+
         try
         {
             conn = DbConnectionManager.getConnection();
@@ -1751,7 +1767,20 @@ public class AppManager extends ManagerBase
                     appendFileObjs(object.getIPKFilePath(), file_objs);
                 }
                 catch(Throwable ignored){}
+
+                String new_path = getRelativePath(object);
+                if(new_path.equals(object.getIPKFilePath()) == false ){
+                    update_app_versions.add(new update_item(object.getId(), new_path));
+                }
             }
+
+            for(update_item version : update_app_versions){
+                stmt = conn.prepareStatement(SQL_UPDATE_APP_VERSION_PATH);
+                stmt.setString(1, version.path);
+                stmt.setString(2, version.id);
+                stmt.executeUpdate();
+            }
+
         }
         catch(SQLException e){
             throw new DemeterException("SQL exception: " + e.getMessage());
@@ -1828,5 +1857,21 @@ public class AppManager extends ManagerBase
         }
 
     }
+
+
+    private static String getRelativePath(
+        AppVersion version){
+
+        String app_str  = version.getAppId();
+        String cur_path = version.getIPKFilePath();
+
+        if(cur_path.startsWith(File.separator) == false
+            && cur_path.startsWith(app_str) == true){
+            return cur_path;
+        }
+
+        return cur_path.substring(cur_path.indexOf(app_str));
+    }
+
 
 }
