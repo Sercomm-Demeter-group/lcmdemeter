@@ -65,7 +65,10 @@ public class DeviceManager extends ManagerBase
     private final static String SQL_DELETE_APP_INSTALLATION =
         String.format("DELETE FROM `%s` WHERE `serial`=? AND `mac`=? AND `appId`=?",
             TABLE_S_APP_INSTALLATION);
-        
+    private final static String SQL_DELETE_DEVICE_APP_INSTALLATIONS =
+        String.format("DELETE FROM `%s` WHERE `serial`=? AND `mac`=?",
+        TABLE_S_APP_INSTALLATION);
+
     private final static int MAX_RETRY_COUNT = 2;
     
     private final UserEventListener userEventListener = new UserEventListener()
@@ -92,7 +95,31 @@ public class DeviceManager extends ManagerBase
                 DeviceEnrollDispatcher.dispatchDeleted(serial, mac, cache.getModelName());
 
                 cache.deleteProperties();
+
+                //clear appInstallation for device
+                Connection conn = null;
+                PreparedStatement stmt = null;
+                boolean abortTransaction = true;
+                try{
+                    conn = DbConnectionManager.getConnection();
+                    conn = DbConnectionUtil.openTransaction(conn);
+                    stmt = conn.prepareStatement(SQL_DELETE_DEVICE_APP_INSTALLATIONS);
+                    stmt.setString(1, serial);
+                    stmt.setString(2, mac);
+                    stmt.executeUpdate();
+                    abortTransaction = false;
+                }
+                catch(SQLException e){
+                    log.error(e.getMessage(), e);
+                }
+                finally{
+                    DbConnectionManager.closeStatement(stmt);
+                    DbConnectionUtil.closeTransaction(conn, abortTransaction);
+                    DbConnectionManager.closeConnection(conn);
+                }
+
             }
+
             catch(Throwable t)
             {
                 log.error(t.getMessage(), t);
@@ -829,6 +856,37 @@ public class DeviceManager extends ManagerBase
             locker.unlock();
         }
     }
+
+    public void removeDevice(
+        String serial,
+        String mac)
+    throws DemeterException
+    {
+        final String dev_id_str = NameRule.formatDeviceName(serial, mac);
+
+        try{
+            User device = UserManager.getInstance().getUser(dev_id_str);
+            UserManager.getInstance().deleteUser(device);
+            EndUserManager.getInstance().deleteUser(serial);
+        }
+        catch(UserNotFoundException e){
+            throw new DemeterException("Cannot remove user");
+        }
+        catch(Throwable e){
+            throw new DemeterException("Cannot remove end user");
+        }
+    }
+
+    public void removeDevice(
+        String deviceId)
+    throws DemeterException
+    {
+        removeDevice(
+            NameRule.toDeviceSerial(deviceId),
+            NameRule.toDeviceMac(deviceId));
+    }
+
+
     
     private static class BlockingInstallListener implements InstallAppTask.Listener
     {

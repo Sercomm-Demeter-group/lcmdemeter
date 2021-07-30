@@ -9,9 +9,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -28,6 +30,7 @@ import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.Meta;
 import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.commons.util.XStringUtil;
+import com.sercomm.openfire.plugin.exception.DemeterException;
 import com.sercomm.openfire.plugin.DeviceManager;
 import com.sercomm.openfire.plugin.cache.DeviceCache;
 import com.sercomm.openfire.plugin.define.DeviceState;
@@ -590,4 +593,32 @@ public class DevicesAPI extends ServiceAPIBase
             this.status = status;
         }
     }
+
+    @DELETE
+    @Path("devices/{deviceId}")
+    @RequireRoles({EndUserRole.ADMIN})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response deleteDevice(
+            @PathParam("deviceId") String deviceId)
+    {
+        Response response;
+
+        try{
+            DeviceManager.getInstance().removeDevice(deviceId);
+            response = createError(
+                Status.OK,
+                "OK",
+                "DEVICE REMOVED");
+        }
+        catch(DemeterException e){
+            // SHOULD NOT BE DELETED
+            response = createError(
+                Status.FORBIDDEN,
+                "ERROR",
+                /*"DEVICE CANNOT BE REMOVED"*/e.getMessage());
+        }
+
+        return response;
+    }
+
 }

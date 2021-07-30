@@ -326,11 +326,23 @@ public class DeviceAPI extends ServiceAPIBase
     public Response deleteDevice(
             @PathParam("deviceId") String deviceId)
     {
-        // SHOULD NOT BE DELETED
-        Response response = createError(
-            Status.FORBIDDEN,
-            "ERROR",
-            "DEVICE CANNOT BE REMOVED");
+        Response response;
+
+        try{
+            DeviceManager.getInstance().removeDevice(deviceId);
+            response = createError(
+                Status.OK,
+                "OK",
+                "DEVICE REMOVED");
+        }
+        catch(DemeterException e){
+            // SHOULD NOT BE DELETED
+            response = createError(
+                Status.FORBIDDEN,
+                "ERROR",
+                "DEVICE CANNOT BE REMOVED");
+        }
+
         return response;
     }
 
