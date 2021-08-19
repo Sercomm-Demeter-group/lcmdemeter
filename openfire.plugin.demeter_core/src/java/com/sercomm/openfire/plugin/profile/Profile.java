@@ -46,6 +46,9 @@ public class Profile
             case S3N:
                 profile = new S3N();
                 break;
+            case RT_SF_1:
+                profile = new RT_SF_1();
+                break;
             default:
                 profile = null;
                 break;
@@ -67,7 +70,8 @@ public class Profile
         IPQ8074_AP_HK01("IPQ8074 AP.HK01"),
         S3("S3"),
         S3RT("S3RT"),
-        S3N("S3N");
+        S3N("S3N"),
+        RT_SF_1("RT-SF-1");
         
         private static Map<String, Model> map = 
                 new ConcurrentHashMap<String, Model>();
