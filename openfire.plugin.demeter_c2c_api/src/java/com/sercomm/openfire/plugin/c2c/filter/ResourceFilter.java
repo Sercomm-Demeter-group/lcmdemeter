@@ -29,10 +29,7 @@ public class ResourceFilter implements ContainerResponseFilter
         // instead of HTTP 204, response code is desired to be HTTP 404
         if(matchedClasses.size() == 0)
         {
-            // in this case, HTTP 401 and HTTP 405 should not be changed
-            if(responseContext.getStatus() != Response.Status.UNAUTHORIZED.getStatusCode() &&
-               responseContext.getStatus() != Response.Status.METHOD_NOT_ALLOWED.getStatusCode())
-            {
+            if(responseContext.getStatus() == Response.Status.NO_CONTENT.getStatusCode()){
                 // respond HTTP 404
                 responseContext.setStatus(Response.Status.NOT_FOUND.getStatusCode());
             }

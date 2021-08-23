@@ -33,6 +33,7 @@ public class UMEiException extends RuntimeException implements ExceptionMapper<R
         super(message);
         this.message = message;
         this.errorStatus = errStatus;
+        this.responseStatus = errStatus;
 	}
 
     public UMEiException(

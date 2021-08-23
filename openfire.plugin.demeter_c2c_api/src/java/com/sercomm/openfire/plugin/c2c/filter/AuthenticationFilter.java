@@ -33,7 +33,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         // Validate the Authorization header
         if (!isTokenBasedAuthentication(authorizationHeader)) {
             throw new UMEiException(
-                "Unathorized: Authorization Header \"Bearer\" is Missing",
+                "Unathorized: Authorization Header 'Bearer' is Missing",
                 Status.UNAUTHORIZED);
         }
 
@@ -44,7 +44,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         // Validate the token
         if(!apiKey.equals(token)) {
             throw new UMEiException(
-                "Unathorized: Bad API Token",
+                "Unauthorized: Bad API Token",
                 Status.UNAUTHORIZED);
         }
     }
