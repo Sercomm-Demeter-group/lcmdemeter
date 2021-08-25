@@ -392,8 +392,9 @@ public class AppAPI extends ServiceAPIBase
         catch(DemeterException e)
         {
             errorMessage = e.getMessage();
+            Status http_status = e.GetHttpStatus();
             response = createError(
-                Status.FORBIDDEN,
+                http_status != null ? http_status : Status.FORBIDDEN,
                 "ERROR",
                 errorMessage);
         }
@@ -565,8 +566,9 @@ public class AppAPI extends ServiceAPIBase
         catch(DemeterException e)
         {
             errorMessage = e.getMessage();
+            Status status = e.GetHttpStatus();
             response = createError(
-                Status.FORBIDDEN,
+                status != null ? status : Status.FORBIDDEN,
                 "ERROR",
                 errorMessage);
         }

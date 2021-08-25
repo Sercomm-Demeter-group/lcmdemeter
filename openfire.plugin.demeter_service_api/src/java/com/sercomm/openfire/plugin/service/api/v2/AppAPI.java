@@ -315,9 +315,12 @@ public class AppAPI extends ServiceAPIBase
             }
             catch(DemeterException e)
             {
-                status = Response.Status.FORBIDDEN;
-                errorMessage = e.getMessage();
 
+                status = e.GetHttpStatus();
+                if(status == null){
+                    status = Response.Status.FORBIDDEN;
+                }
+                errorMessage = e.getMessage();
                 throw new UMEiException(
                     errorMessage,
                     status);

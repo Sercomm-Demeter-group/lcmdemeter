@@ -672,6 +672,16 @@ public class DeviceManager extends ManagerBase
                 dataModel = profile.getInstalledApp(serial, mac, appName);
                 break;
             }
+            catch(DemeterException e){
+                if(MAX_RETRY_COUNT == counter)
+                {
+                    throw e;
+                }
+                else
+                {
+                    continue;
+                }
+            }
             catch(Throwable t1)
             {
                 if(MAX_RETRY_COUNT == counter)
