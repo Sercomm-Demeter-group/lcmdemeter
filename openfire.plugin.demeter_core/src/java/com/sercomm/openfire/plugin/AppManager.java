@@ -18,6 +18,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.Response.Status;
+
 import org.apache.commons.io.FileUtils;
 import org.jivesoftware.database.DbConnectionManager;
 
@@ -210,6 +212,8 @@ public class AppManager extends ManagerBase
         int saved_num = 0;
         boolean err = true;
         String err_string = "";
+        Status http_status = Status.BAD_GATEWAY;
+
 
         final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
 
@@ -240,6 +244,7 @@ public class AppManager extends ManagerBase
         }
         catch (MinioException e) {
             err_string = "Minio exception: " + e + "    HTTP trace: " + e.httpTrace();
+            http_status = Status.SERVICE_UNAVAILABLE;
         }
         catch (InvalidKeyException e) {
             err_string = "Minio exception: " + e;
@@ -260,9 +265,13 @@ public class AppManager extends ManagerBase
                     break;
                 obj_names.add(obj.object_name);
             }
-            RemoveObjectsFromCloud(obj_names);
+            try{
+                RemoveObjectsFromCloud(obj_names);
+            }
+            catch(DemeterException ignored){
+            }
 
-            throw new DemeterException(err_string);
+            throw (new DemeterException(err_string)).SettHttpStatus(http_status);
         }
 
     }
@@ -296,16 +305,20 @@ public class AppManager extends ManagerBase
             
         }
         catch (MinioException e) {
-            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+            throw (new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace()))
+                    .SettHttpStatus(Status.SERVICE_UNAVAILABLE);
         }
         catch (InvalidKeyException e) {
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
         catch (NoSuchAlgorithmException e){
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
         catch(IOException e){
-            throw new DemeterException("IOException: " + e);
+            throw (new DemeterException("IOException: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
 
     }
@@ -345,16 +358,20 @@ public class AppManager extends ManagerBase
         
         }
         catch (MinioException e) {
-            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+            throw (new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace()))
+                    .SettHttpStatus(Status.SERVICE_UNAVAILABLE);
         }
         catch (InvalidKeyException e) {
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
         catch (NoSuchAlgorithmException e){
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
         catch(IOException e){
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("IOException: " + e))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
 
     }
@@ -1744,19 +1761,16 @@ public class AppManager extends ManagerBase
             }
         }
         catch(SQLException e){
-            throw new DemeterException("SQL exception: " + e.getMessage());
+            throw (new DemeterException("SQL exception: " + e.getMessage())).SettHttpStatus(Status.INTERNAL_SERVER_ERROR);
         }
         finally
         {
             DbConnectionManager.closeConnection(rs, stmt, conn);
         }
 
-        try{
-            if(file_objs.size() > 0){
-                SaveFilesToCloud(file_objs, true);
-            }
+        if(file_objs.size() > 0){
+            SaveFilesToCloud(file_objs, true);
         }
-        catch(DemeterException ignored){};
 
     }
 

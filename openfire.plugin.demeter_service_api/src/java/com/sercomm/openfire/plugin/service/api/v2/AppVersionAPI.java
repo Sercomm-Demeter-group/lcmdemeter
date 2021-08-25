@@ -154,9 +154,10 @@ public class AppVersionAPI extends ServiceAPIBase
             }
             catch(DemeterException e)
             {
+                Status http_status = e.GetHttpStatus();
                 throw new UMEiException(
                     e.getMessage(),
-                    Response.Status.FORBIDDEN);
+                    http_status != null ? http_status : Status.FORBIDDEN);
             }
             
             // response
@@ -290,9 +291,10 @@ public class AppVersionAPI extends ServiceAPIBase
             }
             catch(DemeterException e)
             {
+                Status http_status = e.GetHttpStatus();
                 throw new UMEiException(
                     e.getMessage(),
-                    Response.Status.FORBIDDEN);
+                    http_status != null ? http_status : Status.FORBIDDEN);
             }
             
             // response

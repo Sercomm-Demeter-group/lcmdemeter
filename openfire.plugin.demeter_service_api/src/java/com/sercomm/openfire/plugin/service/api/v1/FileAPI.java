@@ -241,8 +241,9 @@ public class FileAPI extends ServiceAPIBase
         catch(DemeterException e)
         {
             errorMessage = e.getMessage();
+            Status status = e.GetHttpStatus();
             response = createError(
-                Status.FORBIDDEN,
+                status != null ? status : Status.FORBIDDEN,
                 "ERROR",
                 errorMessage);
         }
@@ -353,7 +354,7 @@ public class FileAPI extends ServiceAPIBase
 
 
     private static void LoadFileFromCloud(final String target_filename, final String cloud_object_name)
-    throws DemeterException, IOException
+    throws DemeterException
     {
 
         final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
@@ -370,13 +371,20 @@ public class FileAPI extends ServiceAPIBase
         
         }
         catch (MinioException e) {
-            throw new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace());
+            throw (new DemeterException("Minio exception: " + e + "    HTTP trace: " + e.httpTrace()))
+                    .SettHttpStatus(Status.BAD_GATEWAY);
         }
         catch (InvalidKeyException e) {
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.SERVICE_UNAVAILABLE);
+        }
+        catch (IOException e) {
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.SERVICE_UNAVAILABLE);
         }
         catch (NoSuchAlgorithmException e){
-            throw new DemeterException("Minio exception: " + e);
+            throw (new DemeterException("Minio exception: " + e))
+                    .SettHttpStatus(Status.SERVICE_UNAVAILABLE);
         }
 
     }

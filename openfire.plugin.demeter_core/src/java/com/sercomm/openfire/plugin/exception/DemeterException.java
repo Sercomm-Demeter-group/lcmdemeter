@@ -1,5 +1,7 @@
 package com.sercomm.openfire.plugin.exception;
 
+import javax.ws.rs.core.Response.Status;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
@@ -8,6 +10,7 @@ public class DemeterException extends Exception
     private static final long serialVersionUID = 1L;
 
     private Throwable nestedThrowable = null;
+    private Status http_status = null;
 
 
     public DemeterException()
@@ -29,6 +32,15 @@ public class DemeterException extends Exception
     {
         super(message);
         this.nestedThrowable = nestedThrowable;
+    }
+
+    public DemeterException SettHttpStatus(Status status){
+        this.http_status = status;
+        return this;
+    }
+
+    public Status GetHttpStatus(){
+        return http_status;
     }
     
     @Override
