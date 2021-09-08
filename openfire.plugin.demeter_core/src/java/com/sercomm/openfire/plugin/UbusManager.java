@@ -125,7 +125,8 @@ public class UbusManager extends ManagerBase
                 request.getArguments().add(com.sercomm.openfire.plugin.websocket.v0.packet.Function.F_UBUS);
                 request.getArguments().add(method);
                 request.getArguments().add(path);
-                request.getArguments().add(payloadString);
+                if(payloadString != null)
+                    request.getArguments().add(payloadString);
                 
                 com.sercomm.openfire.plugin.websocket.v0.packet.Datagram result;
                 if(session instanceof LocalSession)
@@ -175,7 +176,8 @@ public class UbusManager extends ManagerBase
                             com.sercomm.openfire.plugin.websocket.v1.packet.Function.F_UBUS);
                 request.getArguments().add(method);
                 request.getArguments().add(path);
-                request.getArguments().add(payloadString);
+                if(payloadString != null)
+                    request.getArguments().add(payloadString);
                 
                 com.sercomm.openfire.plugin.websocket.v1.packet.Datagram result;
                 if(session instanceof LocalSession)
