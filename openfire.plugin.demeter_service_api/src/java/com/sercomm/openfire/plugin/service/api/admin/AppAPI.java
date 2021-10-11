@@ -205,6 +205,8 @@ public class AppAPI extends ServiceAPIBase
                     price, 
                     publish, 
                     description, 
+                    null,
+                    null,
                     null);
                 
                 App app = AppManager.getInstance().getApp(publisher, name, modelName);
@@ -316,6 +318,8 @@ public class AppAPI extends ServiceAPIBase
                 
                 AppManager.getInstance().setApp(
                     app, 
+                    null,
+                    null,
                     null);
                 
                 com.sercomm.openfire.plugin.service.dto.admin.App entity = 
@@ -444,7 +448,7 @@ public class AppAPI extends ServiceAPIBase
                     break;                
                 }
                 
-                AppManager.getInstance().setApp(app, requestPayload);
+                AppManager.getInstance().setApp(app, null, null, requestPayload);
                 
                 response = Response.status(Status.CREATED).build();
             }
@@ -506,7 +510,7 @@ public class AppAPI extends ServiceAPIBase
                     break;                
                 }
                 
-                AppManager.getInstance().setApp(app, requestPayload);
+                AppManager.getInstance().setApp(app, null, null, requestPayload);
                 
                 response = Response.status(Status.OK).build();
             }

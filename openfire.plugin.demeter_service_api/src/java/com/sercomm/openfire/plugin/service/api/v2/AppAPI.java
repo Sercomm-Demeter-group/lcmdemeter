@@ -1,6 +1,7 @@
 package com.sercomm.openfire.plugin.service.api.v2;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -11,6 +12,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +45,12 @@ public class AppAPI extends ServiceAPIBase
 
     @POST
     @Path("application")
+    @Consumes({MediaType.MULTIPART_FORM_DATA})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response post(String requestPayload)
+    public Response post(
+            @FormDataParam("payload") String requestPayload,
+            @FormDataParam("file") InputStream fileInputStream,
+            @FormDataParam("file") FormDataContentDisposition fdcd)
     throws UMEiException, InternalErrorException
     {
         Response response = null;
@@ -53,6 +63,9 @@ public class AppAPI extends ServiceAPIBase
         String publisher;
         String model;
         String description;
+        Integer size = 0;
+        byte[] bufferArray = null;
+
 
         String errorMessage = XStringUtil.BLANK;
         try
@@ -102,7 +115,22 @@ public class AppAPI extends ServiceAPIBase
                     errorMessage,
                     status);
             }
+            if(fdcd.getFileName() != null)
+            {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                int length = 0;
+                byte[] buffer = new byte[1024];
+                while ((length = fileInputStream.read(buffer, 0, buffer.length)) != -1)
+                {
+                    baos.write(buffer, 0, length);
+                }
+                baos.flush();
 
+                // obtain the file data
+                bufferArray = baos.toByteArray();
+                // obtain the file size
+                size = bufferArray.length;
+            }
             PostApplicationResult result = null;
             try
             {
@@ -116,15 +144,34 @@ public class AppAPI extends ServiceAPIBase
                         status);
                 }
 
-                AppManager.getInstance().addApp(
-                    publisher, 
-                    name, 
-                    "", 
-                    model, 
-                    "1",
-                    1,
-                    description,
-                    null);
+                if(size > 0)
+                {
+                    AppManager.getInstance().addApp(
+                        publisher,
+                        name,
+                        "",
+                        model,
+                        "1",
+                        1,
+                        description,
+                        fdcd.getFileName(),
+                        bufferArray,
+                        null);
+                }
+                else
+                {
+                    AppManager.getInstance().addApp(
+                        publisher,
+                        name,
+                        "",
+                        model,
+                        "1",
+                        1,
+                        description,
+                        null,
+                        null,
+                        null);
+                }
 
                 App app = AppManager.getInstance().getApp(publisher, name, model);
                 
@@ -177,12 +224,16 @@ public class AppAPI extends ServiceAPIBase
         return response;
     }
 
-    @PUT
+    @POST
     @Path("application/{targetId}")
+    @Consumes({MediaType.MULTIPART_FORM_DATA})
     @Produces({MediaType.APPLICATION_JSON})
     public Response put(
             @PathParam("targetId") String targetId,
-            String requestPayload)
+            @FormDataParam("payload") String requestPayload,
+            @FormDataParam("file") InputStream fileInputStream,
+            @FormDataParam("file") FormDataContentDisposition fdcd)
+
     throws UMEiException, InternalErrorException
     {
         Response response = null;
@@ -192,6 +243,9 @@ public class AppAPI extends ServiceAPIBase
         final String sessionId = (String) request.getAttribute("sessionId");
 
         String description;
+        Integer size = 0;
+        byte[] bufferArray = null;
+
 
         String errorMessage = XStringUtil.BLANK;
         try
@@ -232,6 +286,24 @@ public class AppAPI extends ServiceAPIBase
                 description = XStringUtil.BLANK;
             }
 
+            if(fdcd.getFileName() != null)
+            {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                int length = 0;
+                byte[] buffer = new byte[1024];
+                while ((length = fileInputStream.read(buffer, 0, buffer.length)) != -1)
+                {
+                    baos.write(buffer, 0, length);
+                }
+                baos.flush();
+
+                // obtain the file data
+                bufferArray = baos.toByteArray();
+                // obtain the file size
+                size = bufferArray.length;
+            }
+
+
             try
             {
                 App app = AppManager.getInstance().getApp(targetId);
@@ -246,8 +318,15 @@ public class AppAPI extends ServiceAPIBase
                 }
 
                 app.setDescription(description);
-                
-                AppManager.getInstance().setApp(app, null);
+
+                if(size > 0)
+                {
+                    AppManager.getInstance().setApp(app, fdcd.getFileName(), bufferArray, null);
+                }
+                else
+                {
+                    AppManager.getInstance().setApp(app, null, null, null);
+                }
             }
             catch(DemeterException e)
             {
@@ -356,6 +435,72 @@ public class AppAPI extends ServiceAPIBase
             targetId,
             XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
         
+        return response;
+    }
+
+    @DELETE
+    @Path("application/{targetId}/manifest")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response deleteManifest(
+            @PathParam("targetId") String targetId)
+    throws UMEiException, InternalErrorException
+    {
+        Response response = null;
+        Response.Status status = Status.OK;
+
+        final String userId = (String) request.getAttribute("userId");
+        final String sessionId = (String) request.getAttribute("sessionId");
+
+        String errorMessage = XStringUtil.BLANK;
+        try
+        {
+            try
+            {
+                AppManager.getInstance().deleteManifest(targetId);
+            }
+            catch(DemeterException e)
+            {
+
+                status = e.GetHttpStatus();
+                if(status == null){
+                    status = Response.Status.FORBIDDEN;
+                }
+                errorMessage = e.getMessage();
+                throw new UMEiException(
+                    errorMessage,
+                    status);
+            }
+
+            // response
+            BodyPayload bodyPayload = new BodyPayload()
+                    .withMeta(null)
+                    .withData(null);
+
+            response = Response
+                .status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(bodyPayload.toString())
+                .build();
+        }
+        catch(UMEiException e)
+        {
+            status = e.getErrorStatus();
+            errorMessage = e.getMessage();
+            throw e;
+        }
+        catch(Throwable t)
+        {
+            status = Response.Status.INTERNAL_SERVER_ERROR;
+            errorMessage = org.apache.commons.lang.exception.ExceptionUtils.getStackTrace(t);
+            throw new InternalErrorException(t.getMessage());
+        }
+
+        log.info("({},{},{}); {}",
+            userId,
+            sessionId,
+            targetId,
+            XStringUtil.isNotBlank(errorMessage) ? status.getStatusCode() + ",errors: " + errorMessage : status.getStatusCode());
+
         return response;
     }
 

@@ -41,10 +41,12 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.StatObjectArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.Result;
 import io.minio.messages.Item;
 import io.minio.errors.MinioException;
+import io.minio.StatObjectResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -202,6 +204,91 @@ public class AppManager extends ManagerBase
         SaveFilesToCloud(objects, false);
     }
 
+    public void setManifest(
+            String appId,
+            String manifestFileName,
+            byte[] manifestFileData)
+    throws DemeterException, Throwable
+    {
+        if(manifestFileData != null) {
+            String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+            if(FSRootPathString.endsWith(File.separator) == false){
+                FSRootPathString = FSRootPathString.concat(File.separator);
+            }
+
+            final String manifestFilePathString = appId + File.separator + IpkUtil.PACKAGE_MANIFEST_FILENAME;
+            final Path manifestFilePath = Paths.get(FSRootPathString + manifestFilePathString);
+            final Path packageFolderPath = Paths.get(FSRootPathString + appId);
+            final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+            // create temporary folder
+            Path tempFolder = Files.createTempDirectory(UUID.randomUUID().toString());
+            try
+            {
+                Path tempFilePath = Paths.get(
+                    tempFolder.toAbsolutePath().toString() + File.separator + IpkUtil.PACKAGE_MANIFEST_FILENAME);
+
+                // save bytes array as "data.ipk" file to temporary folder
+                try(FileOutputStream fos = new FileOutputStream(tempFilePath.toFile()))
+                {
+                    fos.write(manifestFileData);
+                }
+                boolean moved = false;
+                try
+                {
+                    if(storage_type == StorageType.LOCAL_FS){
+                        try
+                        {
+                            // check if the package folder exists
+                            if(false == Files.exists(packageFolderPath))
+                            {
+                                Files.createDirectories(packageFolderPath.toAbsolutePath());
+                            }
+                        }
+                        catch(IOException e)
+                        {
+                            throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                        }
+
+                        try
+                        {
+                            // move manifest file
+                            try
+                            {
+                                this.deleteManifest(appId);
+                            }
+                            catch(Throwable ignored) {}
+
+                            Files.move(tempFilePath, manifestFilePath);
+                        }
+                        catch(IOException e)
+                        {
+                            throw new IOException("FAILED TO Create Manifest FILE");
+                        }
+
+                    }
+                    else if(storage_type == StorageType.AWS_S3)
+                    {
+                        this.RemoveObjectFromCloud(manifestFilePathString);
+                        List<CloudObj> objects = new ArrayList<CloudObj>();
+                        objects.add(new CloudObj(tempFilePath.toString(), manifestFilePathString));
+                        SaveFilesToCloud(objects, false);
+
+                    }
+                    else
+                    {
+                        throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+                    }
+                    moved = true;
+                }
+                finally {}
+            }
+            finally
+            {
+                // clean temporary files
+                FileUtils.forceDelete(tempFolder.toFile());
+            }
+        }
+    }
 
     public static void SaveFilesToCloud(
         Iterable<CloudObj> objects,
@@ -323,6 +410,38 @@ public class AppManager extends ManagerBase
 
     }
 
+    public static boolean ExistFileOnCloud(
+            String object_name)
+    throws DemeterException
+    {
+        final String bucket_name = SystemProperties.getInstance().getStorage().getAwsBucket();
+
+         try {
+            MinioClient minioClient = getMinioInstance();
+
+            io.minio.StatObjectResponse stat = minioClient.statObject(StatObjectArgs.builder()
+                .bucket(bucket_name)
+                .object(object_name).build());
+            if(stat.size() != 0)
+            {
+                return true;
+            }
+        }
+        catch (MinioException e) {
+            return false;
+        }
+        catch (InvalidKeyException e) {
+            return false;
+        }
+        catch (NoSuchAlgorithmException e){
+            return false;
+        }
+        catch(IOException e){
+            return false;
+        }
+        return false;
+    }
+
 
     public static void RemoveFolderFromCloud(
             String folder_name)
@@ -385,6 +504,8 @@ public class AppManager extends ManagerBase
             String price,
             Integer publish,
             String description,
+            String manifestFileName,
+            byte[] manifestFileData,
             byte[] iconData)
     throws DemeterException, Throwable
     {
@@ -439,6 +560,10 @@ public class AppManager extends ManagerBase
                 stmt.executeUpdate();
                 DbConnectionManager.fastcloseStmt(stmt);
                 
+
+                final String appId = id;
+                setManifest(appId, manifestFileName, manifestFileData);
+
                 if(null == iconData)
                 {
                     break;
@@ -447,7 +572,6 @@ public class AppManager extends ManagerBase
                 // update 2nd table
                 stmt = conn.prepareStatement(SQL_UPDATE_APP_ICON);
 
-                final String appId = id;
                 final String iconId = Algorithm.md5(iconData);
                 
                 idx = 0;
@@ -483,6 +607,8 @@ public class AppManager extends ManagerBase
 
     public void setApp(
             App object, 
+            String manifestFileName,
+            byte[] manifestFileData,
             byte[] iconData)
     throws DemeterException, Throwable
     {
@@ -526,6 +652,9 @@ public class AppManager extends ManagerBase
                 stmt.executeUpdate();
                 DbConnectionManager.fastcloseStmt(stmt);
                 
+                final String appId = id;
+                setManifest(appId, manifestFileName, manifestFileData);
+
                 if(null == iconData)
                 {
                     break;
@@ -533,7 +662,6 @@ public class AppManager extends ManagerBase
                                 
                 // update 2nd table
                 final long updatedTime = System.currentTimeMillis();
-                final String appId = id;
                 
                 // generate icon ID
                 int length = iconData.length + Long.BYTES;
@@ -736,6 +864,13 @@ public class AppManager extends ManagerBase
             conn = DbConnectionManager.getConnection();
             conn = DbConnectionUtil.openTransaction(conn);
 
+            // delete App manifest
+            try
+            {
+                this.deleteManifest(app.getId());
+            }
+            catch(Throwable ignored) {}
+
             // delete versions of the application
             for(AppVersion appVersion: appVersions)
             {
@@ -754,6 +889,16 @@ public class AppManager extends ManagerBase
             stmt = conn.prepareStatement(SQL_DELETE_APP);                        
             stmt.setString(++idx, app.getId());            
             stmt.executeUpdate();
+
+            String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+            if(FSRootPathString.endsWith(File.separator) == false){
+                FSRootPathString = FSRootPathString.concat(File.separator);
+            }
+            final Path packageFolderPath = Paths.get(FSRootPathString + app.getId());
+            if(true == Files.exists(packageFolderPath))
+            {
+                FileUtils.forceDelete(packageFolderPath.toFile());
+            }
         }
         catch(Throwable t)
         {
@@ -793,6 +938,79 @@ public class AppManager extends ManagerBase
 
             }
         }
+    }
+
+    public void deleteManifest(
+            String appId)
+    throws DemeterException, Throwable
+    {
+        String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+        if(FSRootPathString.endsWith(File.separator) == false){
+            FSRootPathString = FSRootPathString.concat(File.separator);
+        }
+
+        final String manifestFilePathString = appId + File.separator + IpkUtil.PACKAGE_MANIFEST_FILENAME;
+        final Path manifestFilePath = Paths.get(FSRootPathString + manifestFilePathString);
+        final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+
+        if(storage_type == StorageType.LOCAL_FS)
+        {
+            if(true == Files.exists(manifestFilePath))
+            {
+                FileUtils.forceDelete(manifestFilePath.toFile());
+            }
+        }
+        else if(storage_type == StorageType.AWS_S3)
+        {
+            this.RemoveObjectFromCloud(manifestFilePathString);
+        }
+        else
+        {
+             throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+        }
+    }
+
+    public String getManifestExist(
+            String appId)
+    throws DemeterException, Throwable
+    {
+        String ret = "no";
+        String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+        if(FSRootPathString.endsWith(File.separator) == false){
+            FSRootPathString = FSRootPathString.concat(File.separator);
+        }
+
+        final String manifestFilePathString = appId + File.separator + IpkUtil.PACKAGE_MANIFEST_FILENAME;
+        final Path manifestFilePath = Paths.get(FSRootPathString + manifestFilePathString);
+        final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+
+        if(storage_type == StorageType.LOCAL_FS)
+        {
+            if(true == Files.exists(manifestFilePath))
+            {
+                ret = "yes";
+            }
+            else
+            {
+                ret = "no";
+            }
+        }
+        else if(storage_type == StorageType.AWS_S3)
+        {
+            if(this.ExistFileOnCloud(manifestFilePathString))
+            {
+                ret = "yes";
+            }
+            else
+            {
+                ret = "no";
+            }
+        }
+        else
+        {
+             throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
+        }
+        return ret;
     }
 
     public void deleteAppVersion(

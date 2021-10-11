@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import java.util.List;
 import java.util.UUID;
+
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -58,6 +61,46 @@ public class FileAPI extends ServiceAPIBase
     
     private static final int BUFFER_LENGTH = 256;
     
+
+    public String getXMLFromFile(String appName)
+    throws DemeterException, Throwable
+    {
+        List<App> apps = AppManager.getInstance().getApps();
+        for(App app : apps)
+        {
+            if(app.getName().equals(appName))
+            {
+                String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+                if(FSRootPathString.endsWith(File.separator) == false){
+                    FSRootPathString = FSRootPathString.concat(File.separator);
+                }
+
+                final String manifestFilePathString = app.getId() + File.separator + IpkUtil.PACKAGE_MANIFEST_FILENAME;
+                java.nio.file.Path manifestFilePath = Paths.get(FSRootPathString + manifestFilePathString);
+                final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
+
+                if(storage_type == StorageType.LOCAL_FS)
+                {
+                    try
+                    {
+                        // check if the package manifest exists
+                        if(true == Files.exists(manifestFilePath))
+                        {
+                            String data = Files.lines(manifestFilePath).reduce("", String::concat);
+                            return data;
+                        }
+                    }
+                    catch(IOException e)
+                    {
+                         throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                    }
+                }
+                break;
+            }
+        }
+        return null;
+    }
+
     @GET
     @Path("files/icon/{iconId}")
     @Produces({MediaType.APPLICATION_OCTET_STREAM})
@@ -320,7 +363,12 @@ public class FileAPI extends ServiceAPIBase
             }
 
             IProfile profile = Profile.get(modelName);
-            String configurationXML = profile.generateContainerConfiguration(serial, mac, appName);
+            String configurationXML = null;
+            configurationXML = this.getXMLFromFile(appName);
+            if(configurationXML == null)
+            {
+                configurationXML = profile.generateContainerConfiguration(serial, mac, appName);
+            }
         
             response = Response.ok(configurationXML)
                     .header(HttpUtil.HEADER_CONTEXT_DISPOS, String.format("attachment; filename=\"%s\"", filename))

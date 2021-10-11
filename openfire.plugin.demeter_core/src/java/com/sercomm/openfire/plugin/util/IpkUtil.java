@@ -16,6 +16,7 @@ public class IpkUtil
     public final static String CONTROL_FILENAME = "control";
     public final static String PACKAGE_GZ_FILENAME = "Packages.gz";
     public final static String PACKAGE_IPK_FILENAME = "package.ipk";
+    public final static String PACKAGE_MANIFEST_FILENAME = "manifest.xml";
     
     public static com.sercomm.openfire.plugin.data.ipk.Meta validate(Path tempIPKFilePath)
     throws IOException

@@ -28,6 +28,7 @@ import com.sercomm.commons.util.XStringUtil;
 import com.sercomm.openfire.plugin.define.EndUserRole;
 import com.sercomm.openfire.plugin.service.annotation.RequireRoles;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
+import com.sercomm.openfire.plugin.AppManager;
 
 @Path(AppsAPI.URI_PATH)
 @RequireRoles({EndUserRole.ADMIN, EndUserRole.EDITOR})
@@ -206,6 +207,7 @@ public class AppsAPI extends ServiceAPIBase
                     object.setModel(rs.getString("model"));
                     object.setDescription(rs.getString("description"));
                     object.setCreationTime(DateTime.from(rs.getLong("creationTime")).toString(DateTime.FORMAT_ISO_MS));
+                    object.setManifest(AppManager.getInstance().getManifestExist(rs.getString("id")));
 
                     result.add(object);
                 }
@@ -261,6 +263,7 @@ public class AppsAPI extends ServiceAPIBase
         private String model;
         private String description;
         private String creationTime;
+        private String manifest;
 
         public String getApplicationId()
         {
@@ -309,6 +312,14 @@ public class AppsAPI extends ServiceAPIBase
         public void setCreationTime(String creationTime)
         {
             this.creationTime = creationTime;
+        }
+        public String getManifest()
+        {
+            return manifest;
+        }
+        public void setManifest(String manifest)
+        {
+            this.manifest = manifest;
         }
     }
 }
