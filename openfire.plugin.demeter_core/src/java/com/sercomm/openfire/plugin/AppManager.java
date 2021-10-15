@@ -905,15 +905,20 @@ public class AppManager extends ManagerBase
             stmt.setString(++idx, app.getId());            
             stmt.executeUpdate();
 
-            String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
-            if(FSRootPathString.endsWith(File.separator) == false){
-                FSRootPathString = FSRootPathString.concat(File.separator);
-            }
-            final Path packageFolderPath = Paths.get(FSRootPathString + app.getId());
-            if(true == Files.exists(packageFolderPath))
+            try
             {
-                FileUtils.forceDelete(packageFolderPath.toFile());
+                String FSRootPathString = SystemProperties.getInstance().getStorage().getRootPath();
+                if(FSRootPathString.endsWith(File.separator) == false){
+                    FSRootPathString = FSRootPathString.concat(File.separator);
+                }
+                final Path packageFolderPath = Paths.get(FSRootPathString + app.getId());
+
+                if(true == Files.exists(packageFolderPath))
+                {
+                    FileUtils.forceDelete(packageFolderPath.toFile());
+                }
             }
+            catch(Throwable ignored) {}
         }
         catch(Throwable t)
         {
