@@ -62,6 +62,19 @@ public class FileAPI extends ServiceAPIBase
     private static final int BUFFER_LENGTH = 256;
     
 
+
+    private String read_xml_from_file(java.nio.file.Path file_path)
+    throws IOException
+    {
+        String data = null;
+        // check if the package manifest exists
+        if(true == Files.exists(file_path))
+        {
+            data = Files.lines(file_path).reduce("", String::concat);
+        }
+        return data;
+    }
+
     public String getXMLFromFile(String appName)
     throws DemeterException, Throwable
     {
@@ -83,19 +96,60 @@ public class FileAPI extends ServiceAPIBase
                 {
                     try
                     {
-                        // check if the package manifest exists
-                        if(true == Files.exists(manifestFilePath))
-                        {
-                            String data = Files.lines(manifestFilePath).reduce("", String::concat);
-                            return data;
-                        }
+                        return read_xml_from_file(manifestFilePath);
                     }
                     catch(IOException e)
                     {
-                         throw new IOException("FAILED TO CREATE DIRECTORY: " + e.getMessage());
+                         throw new IOException("FAILED TO READ MANIFEST FILE: " + e.getMessage());
                     }
+
+                } else {
+
+                    boolean tmp_file_created = false;
+                    boolean manifest_downloaded = false;
+                    java.nio.file.Path path = null;
+                    String xml = null;
+
+                    try{
+                        path = Files.createTempFile(null, UUID.randomUUID().toString());
+                        tmp_file_created = true;
+                        LoadFileFromCloud(path.toAbsolutePath().toString(), manifestFilePathString);
+                        manifest_downloaded = true;
+                        xml = read_xml_from_file(path);
+                    }
+                    catch(IOException e){
+
+                        String reason = null;
+
+                        if(tmp_file_created){
+                            if(manifest_downloaded){
+                                reason = "CANNOT PARSE DOWNLOADED MANIFEST FILE: " +
+                                manifestFilePathString +
+                                " Message: " +
+                                e.getMessage();
+                            } else {
+                                reason = "CANNOT DOWNLOAD MANIFEST FILE FROM CLOUD: " +
+                                manifestFilePathString +
+                                " Message: " +
+                                e.getMessage();
+                            }
+                        } else {
+                            reason = "CANNOT CREATE TEMPORARY FILE: " +
+                            " Message: " +
+                            e.getMessage();
+                        }
+
+                        throw new DemeterException(reason);
+                    }
+                    finally{
+                        if(tmp_file_created){
+                            FileUtils.forceDelete(new File(path.toString()));
+                        }
+                    }
+
+                    return xml;                        
+                    
                 }
-                break;
             }
         }
         return null;
