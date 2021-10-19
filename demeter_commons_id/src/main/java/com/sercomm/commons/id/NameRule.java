@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class NameRule
 {
     private final static Pattern PATTERN_DEVICE =
-            Pattern.compile("[0-9a-fA-F]{1,}-[0-9a-fA-F]{12}", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("[0-9a-zA-Z]{1,}-[0-9a-fA-F]{12}", Pattern.CASE_INSENSITIVE);
     private final static Pattern PATTERN_EMAIL = 
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
     private static final String BLANK = "";
