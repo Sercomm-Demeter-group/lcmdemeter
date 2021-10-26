@@ -418,7 +418,11 @@ public class FileAPI extends ServiceAPIBase
 
             IProfile profile = Profile.get(modelName);
             String configurationXML = null;
-            configurationXML = this.getXMLFromFile(appName);
+            try
+            {
+                configurationXML = this.getXMLFromFile(appName);
+            }
+            catch(Throwable ignored) {}
             if(configurationXML == null)
             {
                 configurationXML = profile.generateContainerConfiguration(serial, mac, appName);
