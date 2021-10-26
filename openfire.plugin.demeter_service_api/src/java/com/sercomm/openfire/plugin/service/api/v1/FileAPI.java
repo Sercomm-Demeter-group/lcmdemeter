@@ -41,9 +41,7 @@ import com.sercomm.openfire.plugin.profile.IProfile;
 import com.sercomm.openfire.plugin.profile.Profile;
 import com.sercomm.openfire.plugin.service.api.ServiceAPIBase;
 import com.sercomm.openfire.plugin.util.IpkUtil;
-import com.sercomm.openfire.plugin.util.StorageUtil;
 import com.sercomm.openfire.plugin.define.StorageType;
-import com.sercomm.openfire.plugin.AppManager;
 
 import io.minio.MinioClient;
 import io.minio.DownloadObjectArgs;
