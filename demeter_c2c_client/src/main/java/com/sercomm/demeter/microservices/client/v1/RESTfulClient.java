@@ -17,22 +17,26 @@ import org.apache.http.util.EntityUtils;
 
 import com.sercomm.commons.umei.BodyPayload;
 import com.sercomm.commons.umei.HeaderField;
+import com.sercomm.commons.util.HttpUtil;
 import com.sercomm.commons.util.XStringUtil;
 
 public class RESTfulClient
 {
     private String endpoint;
+    private String bearerToken;
     private boolean enableSSL = false;
 
-    private RESTfulClient(String endpoint, boolean enableSSL)
+    private RESTfulClient(String endpoint, String bearerToken, boolean enableSSL)
     {
         this.endpoint = endpoint;
         this.enableSSL = enableSSL;
+        this.bearerToken = bearerToken;
     }
     
     public static class Builder
     {
         private String endpoint;
+        private String bearerToken;
         private boolean enableSSL = false;
 
         public Builder endpoint(String endpoint)
@@ -40,7 +44,13 @@ public class RESTfulClient
             this.endpoint = endpoint;
             return this;
         }
-        
+
+        public Builder bearerToken(String bearerToken)
+        {
+            this.bearerToken = bearerToken;
+            return this;
+        }
+
         public Builder enableSSL(boolean enableSSL)
         {
             this.enableSSL = enableSSL;
@@ -49,7 +59,7 @@ public class RESTfulClient
         
         public RESTfulClient build()
         {
-            return new RESTfulClient(this.endpoint, this.enableSSL);
+            return new RESTfulClient(this.endpoint, this.bearerToken, this.enableSSL);
         }
     }
     
@@ -69,7 +79,8 @@ public class RESTfulClient
                         
             httpPost.addHeader(HeaderField.HEADER_REQUEST_ID, postEchoRequest.getRequestId());
             httpPost.addHeader(HeaderField.HEADER_ORIGINATOR_ID, postEchoRequest.getOriginatorId());
-            
+            httpPost.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
+
             StringEntity requestEntity = new StringEntity(postEchoRequest.getRawText());
             requestEntity.setContentType("application/json");
             httpPost.setEntity(requestEntity);
@@ -121,6 +132,7 @@ public class RESTfulClient
                         
             httpPost.addHeader(HeaderField.HEADER_REQUEST_ID, postUserRequest.getRequestId());
             httpPost.addHeader(HeaderField.HEADER_ORIGINATOR_ID, postUserRequest.getOriginatorId());
+            httpPost.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             StringEntity requestEntity = new StringEntity(postUserRequest.getRawText());
             requestEntity.setContentType("application/json");
@@ -173,6 +185,7 @@ public class RESTfulClient
                         
             httpPost.addHeader(HeaderField.HEADER_REQUEST_ID, postUbusCommandRequest.getRequestId());
             httpPost.addHeader(HeaderField.HEADER_ORIGINATOR_ID, postUbusCommandRequest.getOriginatorId());
+            httpPost.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             StringEntity requestEntity = new StringEntity(postUbusCommandRequest.getRawText());
             requestEntity.setContentType("application/json");
@@ -250,6 +263,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getDevicesRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getDevicesRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -298,6 +312,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getDeviceRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getDeviceRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -363,6 +378,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getInstallableAppsRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getInstallableAppsRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -411,6 +427,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getInstallableAppRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getInstallableAppRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -463,6 +480,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getInstallableAppByNameRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getInstallableAppByNameRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -511,6 +529,7 @@ public class RESTfulClient
                         
             httpPost.addHeader(HeaderField.HEADER_REQUEST_ID, installAppRequest.getRequestId());
             httpPost.addHeader(HeaderField.HEADER_ORIGINATOR_ID, installAppRequest.getOriginatorId());
+            httpPost.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             StringEntity requestEntity = new StringEntity(installAppRequest.getRawText());
             requestEntity.setContentType("application/json");
@@ -563,6 +582,7 @@ public class RESTfulClient
                         
             httpDelete.addHeader(HeaderField.HEADER_REQUEST_ID, uninstallAppRequest.getRequestId());
             httpDelete.addHeader(HeaderField.HEADER_ORIGINATOR_ID, uninstallAppRequest.getOriginatorId());
+            httpDelete.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpDelete))
             {
@@ -611,6 +631,7 @@ public class RESTfulClient
                         
             httpPut.addHeader(HeaderField.HEADER_REQUEST_ID, updateAppRequest.getRequestId());
             httpPut.addHeader(HeaderField.HEADER_ORIGINATOR_ID, updateAppRequest.getOriginatorId());
+            httpPut.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             StringEntity requestEntity = new StringEntity(updateAppRequest.getRawText());
             requestEntity.setContentType("application/json");
@@ -663,6 +684,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getInstalledAppRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getInstalledAppRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
             
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -711,6 +733,7 @@ public class RESTfulClient
                         
             httpGet.addHeader(HeaderField.HEADER_REQUEST_ID, getInstalledAppsRequest.getRequestId());
             httpGet.addHeader(HeaderField.HEADER_ORIGINATOR_ID, getInstalledAppsRequest.getOriginatorId());
+            httpGet.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpGet))
             {
@@ -759,6 +782,7 @@ public class RESTfulClient
                         
             httpPut.addHeader(HeaderField.HEADER_REQUEST_ID, startAppRequest.getRequestId());
             httpPut.addHeader(HeaderField.HEADER_ORIGINATOR_ID, startAppRequest.getOriginatorId());
+            httpPut.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpPut))
             {
@@ -807,6 +831,7 @@ public class RESTfulClient
                         
             httpPut.addHeader(HeaderField.HEADER_REQUEST_ID, stopAppRequest.getRequestId());
             httpPut.addHeader(HeaderField.HEADER_ORIGINATOR_ID, stopAppRequest.getOriginatorId());
+            httpPut.addHeader(HttpUtil.HEADER_AUTHORIZATION, "Bearer " + this.bearerToken);
 
             try(CloseableHttpResponse httpResponse = httpClient.execute(httpPut))
             {
