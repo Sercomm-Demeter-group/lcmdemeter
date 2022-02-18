@@ -78,8 +78,8 @@ public class AppManager extends ManagerBase
                 TABLE_S_APP_ICON);
     private final static String SQL_INSERT_APP_VERSION =
             String.format("INSERT INTO `%s`" + 
-                "(`id`,`appId`,`version`,`status`,`filename`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`) " +
-                "VALUES(?,?,?,?,?,?,?,?,?)",
+                "(`id`,`appId`,`version`,`status`,`filename`,`creationTime`,`ipkFilePath`,`ipkFileSize`,`releaseNote`,`realVersion`) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 TABLE_S_APP_VERSION);
     private final static String SQL_UPDATE_APP_VERSION =
             String.format("UPDATE `%s` SET " + 
@@ -108,6 +108,9 @@ public class AppManager extends ManagerBase
                 TABLE_S_APP);
     private final static String SQL_QUERY_APP_VERSION =
             String.format("SELECT * FROM `%s` WHERE `appId`=? AND `version`=?",
+                TABLE_S_APP_VERSION);
+    private final static String SQL_QUERY_APP_VERSION_REAL_VERSION =
+            String.format("SELECT * FROM `%s` WHERE `appId`=? AND `realVersion`=?",
                 TABLE_S_APP_VERSION);
     private final static String SQL_QUERY_APP_VERSION_BY_ID =
             String.format("SELECT * FROM `%s` WHERE `id`=?",
@@ -1235,6 +1238,7 @@ public class AppManager extends ManagerBase
             // --> end filename investigation
             
             final String description = XStringUtil.isBlank(meta.Description) ? XStringUtil.BLANK : meta.Description;
+            final String realVersion = XStringUtil.isBlank(meta.Version) ? XStringUtil.BLANK : meta.Version;
 
             AppVersion appVersion = null;
             // check if duplicate version name exists
@@ -1299,6 +1303,7 @@ public class AppManager extends ManagerBase
                 stmt.setString(++idx, ipkFilePathString);
                 stmt.setLong(++idx, ipkFileData.length);
                 stmt.setString(++idx, description);
+                stmt.setString(++idx, realVersion);
                 stmt.executeUpdate();
                 
                 // database record being inserted successfully
@@ -1547,6 +1552,40 @@ public class AppManager extends ManagerBase
                 FileUtils.forceDelete(tempFolder.toFile());
             }
         }
+    }
+
+    public AppVersion getAppVersionByRealVersion(
+            String appId,
+            String version)
+    throws DemeterException, Throwable
+    {
+        AppVersion object = null;
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try
+        {
+            conn = DbConnectionManager.getConnection();
+            stmt = conn.prepareStatement(SQL_QUERY_APP_VERSION_REAL_VERSION);
+
+            int idx = 0;
+            stmt.setString(++idx, appId);
+            stmt.setString(++idx, version);
+
+            rs = stmt.executeQuery();
+            if(!rs.next())
+            {
+                throw new DemeterException("APP VERSION WAS NOT FOUND");
+            }
+            object = AppVersion.from(rs);
+        }
+        finally
+        {
+            DbConnectionManager.closeConnection(rs, stmt, conn);
+        }
+
+        return object;
     }
 
     public AppVersion getAppVersion(

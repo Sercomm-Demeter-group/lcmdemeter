@@ -711,7 +711,7 @@ public class DeviceManager extends ManagerBase
             // WARNING:
             // UUID is the 1st installed version ID, but maybe the installed version has ever been updated
             // so it is safe for obtaining the App ID, but it is NOT SAFE for obtaining the version entity
-            AppVersion appVersion = AppManager.getInstance().getAppVersion(_package.UUID);
+            AppVersion appVersion = AppManager.getInstance().getAppVersionByRealVersion(_package.UUID,_package.Version);
             
             appInstallation = new AppInstallation();
             appInstallation.setAppId(appVersion.getAppId());

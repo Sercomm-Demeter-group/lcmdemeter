@@ -16,6 +16,7 @@ public class AppVersion
     private String ipkFilePath;
     private Long ipkFileSize;
     private String releaseNote;
+    private String realVersion;
 
     public AppVersion()
     {
@@ -36,7 +37,8 @@ public class AppVersion
         object.creationTime = rs.getLong("creationTime");
         object.ipkFilePath = rs.getString("ipkFilePath");
         object.ipkFileSize = rs.getLong("ipkFileSize");
-        object.releaseNote = rs.getString("releaseNote");        
+        object.releaseNote = rs.getString("releaseNote");
+        object.realVersion = rs.getString("realVersion");
 
         return object;
     }
@@ -149,5 +151,14 @@ public class AppVersion
     public void setReleaseNote(String releaseNote)
     {
         this.releaseNote = releaseNote;
+    }
+    public String getRealVersion()
+    {
+        return realVersion;
+    }
+
+    public void setRealVersion(String realVersion)
+    {
+        this.realVersion = realVersion;
     }
 }

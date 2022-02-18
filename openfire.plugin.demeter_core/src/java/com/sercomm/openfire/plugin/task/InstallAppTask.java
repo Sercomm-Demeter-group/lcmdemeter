@@ -165,7 +165,7 @@ public class InstallAppTask extends TimerTask
             
             Map<String, Object> payload = new HashMap<String, Object>();
             payload.put("Id", app.getName());
-            payload.put("UUID", version.getId());
+            payload.put("UUID", app.getId());
             payload.put("Source", source);
             payload.put("DisableAutoStart", false);
 
