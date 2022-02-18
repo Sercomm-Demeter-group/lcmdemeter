@@ -83,7 +83,7 @@ public class AppManager extends ManagerBase
                 TABLE_S_APP_VERSION);
     private final static String SQL_UPDATE_APP_VERSION =
             String.format("UPDATE `%s` SET " + 
-                    "`version`=?,`status`=?,`ipkFileSize`=? " +
+                    "`version`=?,`status`=?,`filename`=?,`ipkFileSize`=?,`releaseNote`=?,`realVersion`=? " +
                     "WHERE `id`=?",
                     TABLE_S_APP_VERSION);
     private final static String SQL_UPDATE_APP_VERSION_PATH =
@@ -1423,27 +1423,6 @@ public class AppManager extends ManagerBase
 
         AppVersion appVersion = this.getAppVersion(versionId);
 
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try
-        {
-            conn = DbConnectionManager.getConnection();
-            stmt = conn.prepareStatement(SQL_UPDATE_APP_VERSION);
-            
-            // `version`=?,`status`=?,`ipkFileSize`=? 
-            int idx = 0;
-            stmt.setString(++idx, versionName);
-            stmt.setInt(++idx, status);
-            stmt.setLong(++idx, null == ipkFileData ? appVersion.getIPKFileSize() : ipkFileData.length);
-            stmt.setString(++idx, appVersion.getId());
-
-            stmt.executeUpdate();
-        }
-        finally
-        {
-            DbConnectionManager.closeConnection(stmt, conn);
-        }
-
         // update the IPK file if necessary
         if(null != ipkFileData)
         {
@@ -1496,6 +1475,31 @@ public class AppManager extends ManagerBase
 
                 final StorageType storage_type = SystemProperties.getInstance().getStorage().getStorageType();
             
+                final String description = XStringUtil.isBlank(meta.Description) ? XStringUtil.BLANK : meta.Description;
+                final String realVersion = XStringUtil.isBlank(meta.Version) ? XStringUtil.BLANK : meta.Version;
+                Connection conn = null;
+                PreparedStatement stmt = null;
+                try
+                {
+                    conn = DbConnectionManager.getConnection();
+                    stmt = conn.prepareStatement(SQL_UPDATE_APP_VERSION);
+
+                    // `version`=?,`status`=?,`filename`=?,`ipkFileSize`=?,`releaseNote`=?,`realVersion`=?
+                    int idx = 0;
+                    stmt.setString(++idx, versionName);
+                    stmt.setInt(++idx, status);
+                    stmt.setString(++idx, ipkFileName);
+                    stmt.setLong(++idx, null == ipkFileData ? appVersion.getIPKFileSize() : ipkFileData.length);
+                    stmt.setString(++idx, description);
+                    stmt.setString(++idx, realVersion);
+                    stmt.setString(++idx, appVersion.getId());
+                    stmt.executeUpdate();
+                }
+                finally
+                {
+                    DbConnectionManager.closeConnection(stmt, conn);
+                }
+
                 if(storage_type == StorageType.LOCAL_FS){
 
                     final Path packageFolderPath = Paths.get(FSRootPathString + VersionPathString);
@@ -1544,7 +1548,7 @@ public class AppManager extends ManagerBase
                     throw new DemeterException("STORAGE TYPE IS NOT SUPPORTED");
 
                 }            
-                
+
             }
             finally
             {
