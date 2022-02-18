@@ -215,4 +215,7 @@ ALTER TABLE `sAppInstallation`
   ADD KEY `APP_ID` (`appId`) USING BTREE,
   ADD KEY `VERSION_ID` (`versionId`) USING BTREE;
 
-INSERT INTO `ofVersion`(name,version) VALUES('demeter_core',6);
+-- version 7
+ALTER TABLE `sAppVersion` ADD `realVersion` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'IPK Version' AFTER `releaseNote`;
+
+INSERT INTO `ofVersion`(name,version) VALUES('demeter_core',7);

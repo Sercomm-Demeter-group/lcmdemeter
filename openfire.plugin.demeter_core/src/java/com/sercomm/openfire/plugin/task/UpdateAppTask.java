@@ -77,11 +77,10 @@ public class UpdateAppTask extends TimerTask
         String.format("SELECT * FROM `%s` WHERE `serial`=? AND `mac`=? AND `appId`=? LIMIT 1",
             TABLE_S_APP_INSTALLATION);
     private final static String SQL_UPDATE_APP_INSTALLATION =
-        String.format("INSERT INTO `%s`(`id`,`serial`,`mac`,`appId`,`versionId`,`creationTime`) " +
-            "VALUES(?,?,?,?,?,?) " +
-            "ON DUPLICATE KEY UPDATE `versionId`=? AND `creationTime`=?",
+        String.format("UPDATE `%s` SET " +
+            "`versionId`=?,`creationTime`=? " +
+            "WHERE `id`=?",
             TABLE_S_APP_INSTALLATION);
-
     public UpdateAppTask(
             String serial,
             String mac,
@@ -133,7 +132,7 @@ public class UpdateAppTask extends TimerTask
                 throw new DemeterException("APP HAS NOT BEEN INSTALLED");
             }
             
-            if(0 == version.getVersion().compareTo(appInstallation.getVersion()))
+            if(0 == version.getRealVersion().compareTo(appInstallation.getVersion()))
             {
                 throw new DemeterException("APP VERSION HAS ALREADY BEEN INSTALLED");
             }
@@ -248,7 +247,7 @@ public class UpdateAppTask extends TimerTask
                     continue;
                 }
                 
-                if(0 == this.version.getVersion().compareToIgnoreCase(appInstallation.getVersion()))
+                if(0 == this.version.getRealVersion().compareToIgnoreCase(appInstallation.getVersion()))
                 {
                     if(0 == "Installed".compareToIgnoreCase(appInstallation.getStatus()) ||
                        0 == "Running".compareToIgnoreCase(appInstallation.getStatus()))
@@ -314,15 +313,9 @@ public class UpdateAppTask extends TimerTask
                     stmt = conn.prepareStatement(SQL_UPDATE_APP_INSTALLATION);
 
                     int idx = 0;
-                    stmt.setString(++idx, XStringUtil.isBlank(installationId) ? UUID.randomUUID().toString() : installationId);
-                    stmt.setString(++idx, serial);
-                    stmt.setString(++idx, mac);
-                    stmt.setString(++idx, this.app.getId());                
                     stmt.setString(++idx, this.version.getId());
                     stmt.setLong(++idx, now);
-                    stmt.setString(++idx, this.version.getId());
-                    stmt.setLong(++idx, now);
-
+                    stmt.setString(++idx, installationId);
                     stmt.executeUpdate();
                 }
                 finally
@@ -378,12 +371,13 @@ public class UpdateAppTask extends TimerTask
             catch(Throwable ignored) {}
         }
         
-        log.info("({},{},{},{},{})={}",
+        log.info("({},{},{},{},{},{})={}",
             this.serial,
             this.mac,
             this.app.getPublisher(),
             this.app.getName(),
             this.version.getVersion(),
+            this.version.getRealVersion(),
             errorMessage);
     }
     
